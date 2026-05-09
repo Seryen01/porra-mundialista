@@ -1,0 +1,195 @@
+"use client";
+
+import { signOut, useSession } from "next-auth/react";
+import { LogOut, Shield, Mail, ChevronRight } from "lucide-react";
+
+export default function ProfilePage() {
+  const { data: session } = useSession();
+  const isAdmin = (session?.user as any)?.role === "ADMIN";
+
+  return (
+    <div className="profile animate-in">
+      <h1>Perfil</h1>
+
+      {/* Avatar card */}
+      <div className="profile-hero card">
+        <div className="avatar-ring">
+          <div className="avatar-inner">
+            {session?.user?.name?.[0]}
+          </div>
+        </div>
+        <h2 className="profile-name">{session?.user?.name}</h2>
+        <span className="profile-email">{session?.user?.email}</span>
+        <div className={`role-chip ${isAdmin ? 'admin' : ''}`}>
+          <Shield size={12} />
+          {isAdmin ? "Administrador" : "Jugador"}
+        </div>
+      </div>
+
+      {/* Info list */}
+      <div className="info-list card animate-in stagger-1">
+        <div className="info-item">
+          <div className="info-icon">
+            <Mail size={18} />
+          </div>
+          <div className="info-content">
+            <span className="info-label">Email</span>
+            <span className="info-value">{session?.user?.email}</span>
+          </div>
+          <ChevronRight size={16} className="info-chevron" />
+        </div>
+        <div className="info-item">
+          <div className="info-icon">
+            <Shield size={18} />
+          </div>
+          <div className="info-content">
+            <span className="info-label">Rol</span>
+            <span className="info-value">{isAdmin ? "Administrador" : "Jugador"}</span>
+          </div>
+          <ChevronRight size={16} className="info-chevron" />
+        </div>
+      </div>
+
+      {/* Logout */}
+      <button onClick={() => signOut({ callbackUrl: '/login' })} className="logout-btn animate-in stagger-2">
+        <LogOut size={18} />
+        Cerrar Sesión
+      </button>
+
+      <style jsx>{`
+        .profile h1 {
+          font-size: 1.6rem;
+          font-weight: 800;
+          margin-bottom: 1.5rem;
+        }
+        .profile-hero {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 2rem 1.5rem;
+          margin-bottom: 1rem;
+          text-align: center;
+        }
+        .avatar-ring {
+          width: 80px;
+          height: 80px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, var(--green), #00e676);
+          padding: 3px;
+          margin-bottom: 1rem;
+        }
+        .avatar-inner {
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          background: var(--bg-card);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.8rem;
+          font-weight: 800;
+          color: var(--green);
+        }
+        .profile-name {
+          font-size: 1.3rem;
+          font-weight: 700;
+          margin-bottom: 0.2rem;
+        }
+        .profile-email {
+          color: var(--text-muted);
+          font-size: 0.85rem;
+          margin-bottom: 0.8rem;
+        }
+        .role-chip {
+          display: flex;
+          align-items: center;
+          gap: 0.3rem;
+          background: rgba(255,255,255,0.05);
+          color: var(--text-secondary);
+          padding: 4px 12px;
+          border-radius: 20px;
+          font-size: 0.72rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .role-chip.admin {
+          background: var(--gold-dim);
+          color: var(--gold);
+        }
+
+        .info-list {
+          padding: 0.25rem 0;
+          margin-bottom: 1.5rem;
+        }
+        .info-item {
+          display: flex;
+          align-items: center;
+          padding: 0.9rem 1rem;
+          gap: 0.8rem;
+          border-bottom: 1px solid var(--border);
+          transition: background 0.2s;
+        }
+        .info-item:last-child {
+          border-bottom: none;
+        }
+        .info-item:hover {
+          background: rgba(255,255,255,0.02);
+        }
+        .info-icon {
+          width: 36px;
+          height: 36px;
+          border-radius: 10px;
+          background: rgba(255,255,255,0.05);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--text-secondary);
+          flex-shrink: 0;
+        }
+        .info-content {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          min-width: 0;
+        }
+        .info-label {
+          font-size: 0.7rem;
+          color: var(--text-dim);
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.03em;
+        }
+        .info-value {
+          font-size: 0.9rem;
+          font-weight: 500;
+          color: var(--text-primary);
+        }
+        .info-chevron {
+          color: var(--text-dim);
+          flex-shrink: 0;
+        }
+
+        .logout-btn {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.6rem;
+          padding: 0.9rem;
+          background: rgba(239, 68, 68, 0.1);
+          color: #fca5a5;
+          border: 1px solid rgba(239, 68, 68, 0.15);
+          border-radius: var(--radius);
+          font-weight: 700;
+          font-size: 0.9rem;
+          transition: all 0.2s;
+        }
+        .logout-btn:hover {
+          background: rgba(239, 68, 68, 0.15);
+          color: #ef4444;
+        }
+      `}</style>
+    </div>
+  );
+}

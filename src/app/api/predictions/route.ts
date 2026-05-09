@@ -1,0 +1,98 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]/route";
+
+export async function POST(req: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const userId = (session.user as any).id;
+  const body = await req.json();
+  const { matchId, scoreA, scoreB } = body;
+
+  const match = await prisma.match.findUnique({
+    where: { id: matchId },
+  });
+
+  if (!match) {
+    return NextResponse.json({ error: "Match not found" }, { status: 404 });
+  }
+
+  // Lock check
+  const now = new Date();
+  if (match.status !== "UPCOMING" || match.date < now) {
+    return NextResponse.json({ error: "Match already started or finished" }, { status: 400 });
+  }
+
+  const prediction = await prisma.prediction.upsert({
+    where: {
+      userId_matchId: { userId, matchId },
+    },
+    update: {
+      predictedScoreA: parseInt(scoreA),
+      predictedScoreB: parseInt(scoreB),
+    },
+    create: {
+      userId,
+      matchId,
+      predictedScoreA: parseInt(scoreA),
+      predictedScoreB: parseInt(scoreB),
+    },
+  });
+
+  return NextResponse.json(prediction);
+}
+
+// GET all predictions for a specific match (revealed only if match started)
+export async function GET(req: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(req.url);
+  const matchId = searchParams.get("matchId");
+
+  if (!matchId) {
+    return NextResponse.json({ error: "Match ID required" }, { status: 400 });
+  }
+
+  const match = await prisma.match.findUnique({
+    where: { id: matchId },
+  });
+
+  if (!match) {
+    return NextResponse.json({ error: "Match not found" }, { status: 404 });
+  }
+
+  const now = new Date();
+  const isRevealed = match.status !== "UPCOMING" || match.date < now;
+
+  if (!isRevealed) {
+    // Only return the user's own prediction
+    const prediction = await prisma.prediction.findUnique({
+      where: {
+        userId_matchId: {
+          userId: (session.user as any).id,
+          matchId,
+        },
+      },
+    });
+    return NextResponse.json(prediction ? [prediction] : []);
+  }
+
+  // Revealed: return all predictions for this match with user info
+  const predictions = await prisma.prediction.findMany({
+    where: { matchId },
+    include: {
+      user: {
+        select: { name: true },
+      },
+    },
+  });
+
+  return NextResponse.json(predictions);
+}

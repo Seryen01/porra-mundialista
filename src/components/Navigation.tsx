@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Trophy, Calendar, User, Settings } from "lucide-react";
+import { Trophy, Calendar, User, Settings, History } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 export default function Navigation() {
@@ -16,6 +16,7 @@ export default function Navigation() {
   const navItems = [
     { name: "Partidos", href: "/", icon: Calendar },
     { name: "Ranking", href: "/leaderboard", icon: Trophy },
+    { name: "Histórico", href: "/historico", icon: History },
     { name: "Perfil", href: "/profile", icon: User },
   ];
 

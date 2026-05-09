@@ -49,5 +49,6 @@ next-env.d.ts
 # claude code
 .claude/
 
-# office temp files
+# office files
 ~$*
+*.docx

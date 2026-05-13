@@ -256,14 +256,39 @@ function AdminMatchCard({ match, onUpdate, onDelete }: { match: any; onUpdate: (
     return (
       <div className="admin-card card edit-mode animate-in">
         <div className="edit-header">
-          <span className="edit-title">Editar Partido</span>
+          <span className="edit-title">✏️ Editar Partido</span>
           <button className="icon-btn" onClick={() => setIsEditing(false)}><X size={16} /></button>
         </div>
         <div className="edit-grid">
-          <input value={editTeamA} onChange={e => setEditTeamA(e.target.value)} placeholder="Equipo A" />
-          <input value={editTeamB} onChange={e => setEditTeamB(e.target.value)} placeholder="Equipo B" />
-          <input type="datetime-local" value={editDate} onChange={e => setEditDate(e.target.value)} />
-          <input value={editPhase} onChange={e => setEditPhase(e.target.value)} placeholder="Fase" />
+          <div className="edit-field">
+            <label>Equipo A</label>
+            <input value={editTeamA} onChange={e => setEditTeamA(e.target.value)} placeholder="Equipo A" />
+          </div>
+          <div className="edit-field">
+            <label>Equipo B</label>
+            <input value={editTeamB} onChange={e => setEditTeamB(e.target.value)} placeholder="Equipo B" />
+          </div>
+          <div className="edit-field">
+            <label>Fecha y hora (hora local)</label>
+            <input type="datetime-local" value={editDate} onChange={e => setEditDate(e.target.value)} />
+          </div>
+          <div className="edit-field">
+            <label>Fase</label>
+            <select value={editPhase} onChange={e => setEditPhase(e.target.value)}>
+              <optgroup label="Fase de Grupos">
+                {["A","B","C","D","E","F","G","H","I","J","K","L"].map(g => (
+                  <option key={g} value={`Grupo ${g}`}>Grupo {g}</option>
+                ))}
+              </optgroup>
+              <optgroup label="Fase Final">
+                <option value="Dieciseisavos">Dieciseisavos</option>
+                <option value="Octavos">Octavos</option>
+                <option value="Cuartos">Cuartos</option>
+                <option value="Semis">Semis</option>
+                <option value="Final">Final</option>
+              </optgroup>
+            </select>
+          </div>
         </div>
         <div className="edit-actions">
           <button className="ac-btn save" onClick={handleSaveDetails}><Check size={14} /> Guardar Cambios</button>
@@ -272,11 +297,23 @@ function AdminMatchCard({ match, onUpdate, onDelete }: { match: any; onUpdate: (
 
         <style jsx>{`
           .edit-mode { padding: 1rem; border-color: var(--accent); }
-          .edit-header { display: flex; justify-content: space-between; margin-bottom: 1rem; }
+          .edit-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
           .edit-title { font-weight: 700; font-size: 0.9rem; color: var(--gold); }
-          .icon-btn { background: none; color: var(--text-muted); border: none; padding: 0; }
-          .edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem; }
-          .edit-grid input { background: var(--bg-primary); border: 1px solid var(--border); padding: 0.6rem; border-radius: 4px; color: white; font-size: 0.8rem; }
+          .icon-btn { background: none; color: var(--text-muted); border: none; padding: 0; cursor: pointer; }
+          .edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 1rem; }
+          .edit-field { display: flex; flex-direction: column; gap: 0.25rem; }
+          .edit-field label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+          .edit-field input, .edit-field select {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            padding: 0.6rem;
+            border-radius: 4px;
+            color: white;
+            font-size: 0.8rem;
+            font-family: inherit;
+          }
+          .edit-field input:focus, .edit-field select:focus { outline: none; border-color: var(--gold); }
+          .edit-field select option, .edit-field select optgroup { background: #1a1a2e; color: white; }
           .edit-actions { display: flex; gap: 0.5rem; }
           .ac-btn { flex: 1; padding: 0.6rem; border-radius: 6px; font-weight: 700; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 0.3rem; border: none; cursor: pointer; }
           .ac-btn.save { background: var(--green); color: black; }

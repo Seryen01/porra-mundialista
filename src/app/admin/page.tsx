@@ -259,25 +259,36 @@ function AdminMatchCard({ match, onUpdate, onDelete }: { match: any; onUpdate: (
           <span className="edit-title">✏️ Editar Partido</span>
           <button className="icon-btn" onClick={() => setIsEditing(false)}><X size={16} /></button>
         </div>
+        <datalist id="country-list">
+          {countryNames.map(name => <option key={name} value={name} />)}
+        </datalist>
         <div className="edit-grid">
           <div className="edit-field">
             <label>Equipo A</label>
-            <div style={{ display:"flex", alignItems:"center", gap:"0.4rem" }}>
-              <img src={getFlagUrl(editTeamA)} alt="" style={{ width:28, height:18, objectFit:"cover", borderRadius:3, border:"1px solid rgba(255,255,255,0.15)", flexShrink:0 }} />
-              <select value={countryNames.includes(editTeamA) ? editTeamA : ""} onChange={e => setEditTeamA(e.target.value)} style={{ flex:1, background:"var(--bg-primary)", border:"1px solid var(--border)", padding:"0.6rem 0.4rem", borderRadius:4, color:"white", fontSize:"0.8rem", fontFamily:"inherit" }}>
-                <option value="">— Seleccionar país —</option>
-                {countryNames.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
+            <div className="team-input-wrap">
+              <img className="team-flag-preview" src={getFlagUrl(editTeamA)} alt="" />
+              <input
+                className="team-input"
+                value={editTeamA}
+                list="country-list"
+                onChange={e => setEditTeamA(e.target.value)}
+                placeholder="Escribe el país…"
+                autoComplete="off"
+              />
             </div>
           </div>
           <div className="edit-field">
             <label>Equipo B</label>
-            <div style={{ display:"flex", alignItems:"center", gap:"0.4rem" }}>
-              <img src={getFlagUrl(editTeamB)} alt="" style={{ width:28, height:18, objectFit:"cover", borderRadius:3, border:"1px solid rgba(255,255,255,0.15)", flexShrink:0 }} />
-              <select value={countryNames.includes(editTeamB) ? editTeamB : ""} onChange={e => setEditTeamB(e.target.value)} style={{ flex:1, background:"var(--bg-primary)", border:"1px solid var(--border)", padding:"0.6rem 0.4rem", borderRadius:4, color:"white", fontSize:"0.8rem", fontFamily:"inherit" }}>
-                <option value="">— Seleccionar país —</option>
-                {countryNames.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
+            <div className="team-input-wrap">
+              <img className="team-flag-preview" src={getFlagUrl(editTeamB)} alt="" />
+              <input
+                className="team-input"
+                value={editTeamB}
+                list="country-list"
+                onChange={e => setEditTeamB(e.target.value)}
+                placeholder="Escribe el país…"
+                autoComplete="off"
+              />
             </div>
           </div>
           <div className="edit-field">
@@ -325,6 +336,34 @@ function AdminMatchCard({ match, onUpdate, onDelete }: { match: any; onUpdate: (
             font-family: inherit;
           }
           .edit-field input:focus, .edit-field select:focus { outline: none; border-color: var(--gold); }
+          .team-input-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 0.35rem 0.6rem;
+          }
+          .team-input-wrap:focus-within { border-color: var(--gold); }
+          .team-flag-preview {
+            width: 28px;
+            height: 18px;
+            object-fit: cover;
+            border-radius: 2px;
+            flex-shrink: 0;
+          }
+          .team-input {
+            flex: 1;
+            background: none;
+            border: none;
+            padding: 0;
+            color: white;
+            font-size: 0.8rem;
+            font-family: inherit;
+            min-width: 0;
+          }
+          .team-input:focus { outline: none; }
           .edit-field select option, .edit-field select optgroup { background: #1a1a2e; color: white; }
           .edit-actions { display: flex; gap: 0.5rem; }
           .ac-btn { flex: 1; padding: 0.6rem; border-radius: 6px; font-weight: 700; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 0.3rem; border: none; cursor: pointer; }

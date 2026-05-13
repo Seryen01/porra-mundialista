@@ -11,15 +11,25 @@ export async function GET() {
           points: true,
         },
       },
+      bonus: {
+        select: {
+          points: true,
+        }
+      }
     },
   });
 
   const leaderboard = users.map((user) => {
-    const totalPoints = user.predictions.reduce((sum, p) => sum + p.points, 0);
+    const matchPoints = user.predictions.reduce((sum, p) => sum + p.points, 0);
+    const bonusPoints = user.bonus?.points || 0;
+    const totalPoints = matchPoints + bonusPoints;
+    
     return {
       id: user.id,
       name: user.name,
       points: totalPoints,
+      matchPoints,
+      bonusPoints
     };
   });
 

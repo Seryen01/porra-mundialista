@@ -7,6 +7,9 @@ export async function calculatePoints(matchId: string, scoreA: number, scoreB: n
 
   const realOutcome = scoreA > scoreB ? "1" : scoreA < scoreB ? "2" : "X";
 
+  const match = await prisma.match.findUnique({ where: { id: matchId } });
+  const isStar = match?.isStarMatch ?? false;
+
   for (const prediction of predictions) {
     let points = 0;
     const predA = prediction.predictedScoreA;
@@ -14,9 +17,9 @@ export async function calculatePoints(matchId: string, scoreA: number, scoreB: n
     const predOutcome = predA > predB ? "1" : predA < predB ? "2" : "X";
 
     if (predA === scoreA && predB === scoreB) {
-      points = 5;
+      points = isStar ? 10 : 5;
     } else if (predOutcome === realOutcome) {
-      points = 3;
+      points = isStar ? 5 : 3;
     } else {
       points = 0;
     }

@@ -30,6 +30,10 @@ export async function POST(req: Request) {
   const body = await req.json();
   const { teamA, teamB, date, phase } = body;
 
+  if (!teamA || !teamB || !date || !phase || isNaN(Date.parse(date))) {
+    return NextResponse.json({ error: "Datos de partido inválidos" }, { status: 400 });
+  }
+
   const match = await prisma.match.create({
     data: {
       teamA,

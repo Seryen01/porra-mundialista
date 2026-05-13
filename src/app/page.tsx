@@ -17,6 +17,7 @@ interface Match {
   scoreA: number | null;
   scoreB: number | null;
   status: string;
+  isStarMatch: boolean;
   predictions: any[];
 }
 
@@ -82,6 +83,8 @@ export default function Dashboard() {
       <div className="progress-bar animate-in stagger-1">
         <div className="progress-fill" style={{ width: `${(totalPredictions / Math.max(matches.length, 1)) * 100}%` }} />
       </div>
+
+      <BonusSection />
 
       {/* Matches */}
       {Object.keys(groupedMatches).length === 0 ? (
@@ -270,7 +273,12 @@ function MatchCard({ match, onUpdate }: { match: Match; onUpdate: () => void }) 
       {/* Top bar: phase + time */}
       <div className="mc-top">
         <span className="mc-phase">{match.phase}</span>
-        <span className="mc-time">{format(new Date(match.date), "HH:mm")}</span>
+        <div className="mc-top-right">
+          {match.isStarMatch && (
+            <span className="star-badge" title="Puntos dobles en este partido">⭐ Partido Estrella</span>
+          )}
+          <span className="mc-time">{format(new Date(match.date), "HH:mm")}</span>
+        </div>
       </div>
 
       {/* Teams row */}
@@ -393,6 +401,21 @@ function MatchCard({ match, onUpdate }: { match: Match; onUpdate: () => void }) 
           text-transform: uppercase;
           letter-spacing: 0.1em;
           color: var(--text-muted);
+        }
+        .mc-top-right {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        .star-badge {
+          background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(251, 191, 36, 0.1));
+          color: var(--gold);
+          font-size: 0.6rem;
+          font-weight: 800;
+          padding: 2px 6px;
+          border-radius: 4px;
+          border: 1px solid rgba(251, 191, 36, 0.3);
+          text-transform: uppercase;
         }
         .mc-time {
           font-size: 0.7rem;
@@ -587,6 +610,201 @@ function MatchCard({ match, onUpdate }: { match: Match; onUpdate: () => void }) 
         .mc-locked-info.missed {
           color: var(--text-dim);
           opacity: 0.6;
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function BonusSection() {
+  const [bonus, setBonus] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [topScorer, setTopScorer] = useState("");
+  const [champion, setChampion] = useState("");
+  const [spainResult, setSpainResult] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
+
+  useEffect(() => {
+    fetchBonus();
+    const tournamentStart = new Date("2026-06-11T20:00:00Z");
+    setIsLocked(new Date() >= tournamentStart);
+  }, []);
+
+  const fetchBonus = async () => {
+    const res = await fetch("/api/bonus");
+    if (res.ok) {
+      const data = await res.json();
+      if (data.userId) {
+        setBonus(data);
+        setTopScorer(data.topScorer || "");
+        setChampion(data.champion || "");
+        setSpainResult(data.spainResult || "");
+      }
+    }
+    setLoading(false);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    await fetch("/api/bonus", {
+      method: "POST",
+      body: JSON.stringify({ topScorer, champion, spainResult }),
+    });
+    setSaving(false);
+    fetchBonus();
+    alert("Bonus guardado correctamente!");
+  };
+
+  if (loading) return null;
+
+  return (
+    <div className="bonus-section card animate-in stagger-2">
+      <div className="bonus-header">
+        <h2>🏆 Predicciones Bonus</h2>
+        {isLocked && <span className="locked-badge"><Lock size={12} /> Bloqueado</span>}
+      </div>
+      <p className="bonus-desc">Predice los resultados finales del Mundial. Solo puedes editar esto antes del inicio del torneo.</p>
+      
+      <form onSubmit={handleSave} className="bonus-form">
+        <div className="bf-group">
+          <label>Máximo Goleador</label>
+          <input 
+            type="text" 
+            placeholder="Ej. Mbappé" 
+            value={topScorer} 
+            onChange={e => setTopScorer(e.target.value)} 
+            disabled={isLocked || saving} 
+          />
+        </div>
+        <div className="bf-group">
+          <label>Campeón del Mundial</label>
+          <input 
+            type="text" 
+            placeholder="Ej. Brasil" 
+            value={champion} 
+            onChange={e => setChampion(e.target.value)} 
+            disabled={isLocked || saving} 
+          />
+        </div>
+        <div className="bf-group">
+          <label>Resultado de España</label>
+          <select 
+            value={spainResult} 
+            onChange={e => setSpainResult(e.target.value)} 
+            disabled={isLocked || saving}
+          >
+            <option value="">Selecciona...</option>
+            <option value="Fase de grupos">Fase de grupos</option>
+            <option value="Dieciseisavos de final">Dieciseisavos de final</option>
+            <option value="Octavos de final">Octavos de final</option>
+            <option value="Cuartos de final">Cuartos de final</option>
+            <option value="Semifinales">Semifinales</option>
+            <option value="Final">Final</option>
+            <option value="Campeón">Campeón</option>
+          </select>
+        </div>
+        
+        {!isLocked && (
+          <button type="submit" className="bf-btn" disabled={saving}>
+            {saving ? "Guardando..." : "Guardar Bonus"}
+          </button>
+        )}
+        {bonus?.points > 0 && (
+          <div className="bonus-points">
+            Puntos obtenidos: <strong>+{bonus.points} pts</strong>
+          </div>
+        )}
+      </form>
+
+      <style jsx>{`
+        .bonus-section {
+          margin-bottom: 1.5rem;
+          background: linear-gradient(135deg, rgba(251, 191, 36, 0.05), rgba(251, 191, 36, 0.02));
+          border-color: rgba(251, 191, 36, 0.2);
+        }
+        .bonus-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 0.5rem;
+        }
+        .bonus-header h2 {
+          font-size: 1.1rem;
+          color: var(--gold);
+          margin: 0;
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
+        }
+        .locked-badge {
+          display: flex;
+          align-items: center;
+          gap: 0.3rem;
+          font-size: 0.7rem;
+          background: rgba(255,255,255,0.1);
+          padding: 2px 8px;
+          border-radius: 4px;
+          color: var(--text-muted);
+        }
+        .bonus-desc {
+          font-size: 0.75rem;
+          color: var(--text-dim);
+          margin-bottom: 1rem;
+        }
+        .bonus-form {
+          display: flex;
+          flex-direction: column;
+          gap: 0.8rem;
+        }
+        .bf-group {
+          display: flex;
+          flex-direction: column;
+          gap: 0.3rem;
+        }
+        .bf-group label {
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: var(--text-secondary);
+        }
+        .bf-group input, .bf-group select {
+          background: var(--bg-input);
+          border: 1px solid var(--border);
+          padding: 0.6rem;
+          border-radius: var(--radius-sm);
+          color: var(--text-primary);
+          font-size: 0.85rem;
+        }
+        .bf-group input:focus, .bf-group select:focus {
+          outline: none;
+          border-color: var(--gold);
+        }
+        .bf-group input:disabled, .bf-group select:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+        .bf-btn {
+          margin-top: 0.5rem;
+          background: linear-gradient(135deg, var(--gold), #f59e0b);
+          color: #000;
+          font-weight: 700;
+          padding: 0.7rem;
+          border-radius: var(--radius-sm);
+          border: none;
+          cursor: pointer;
+        }
+        .bf-btn:disabled {
+          opacity: 0.5;
+        }
+        .bonus-points {
+          margin-top: 0.5rem;
+          background: rgba(251, 191, 36, 0.15);
+          color: var(--gold);
+          padding: 0.5rem;
+          border-radius: 4px;
+          text-align: center;
+          font-size: 0.85rem;
         }
       `}</style>
     </div>

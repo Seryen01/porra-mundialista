@@ -13,6 +13,10 @@ export async function POST(req: Request) {
   const body = await req.json();
   const { matchId, scoreA, scoreB } = body;
 
+  if (scoreA === undefined || scoreB === undefined || scoreA === "" || scoreB === "" || isNaN(parseInt(scoreA)) || isNaN(parseInt(scoreB))) {
+    return NextResponse.json({ error: "Puntuaciones inválidas" }, { status: 400 });
+  }
+
   const match = await prisma.match.findUnique({
     where: { id: matchId },
   });

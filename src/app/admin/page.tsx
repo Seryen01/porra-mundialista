@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { getFlagUrl, getCode } from "@/lib/flags";
+import { getFlagUrl, getCode, countryNames } from "@/lib/flags";
 import { Plus, Check, Zap, Trash2, Edit2, X } from "lucide-react";
 
 export default function AdminPage() {
@@ -259,14 +259,24 @@ function AdminMatchCard({ match, onUpdate, onDelete }: { match: any; onUpdate: (
           <span className="edit-title">✏️ Editar Partido</span>
           <button className="icon-btn" onClick={() => setIsEditing(false)}><X size={16} /></button>
         </div>
+        <datalist id="admin-teams-list">
+          {countryNames.map(t => <option key={t} value={t} />)}
+        </datalist>
+
         <div className="edit-grid">
           <div className="edit-field">
             <label>Equipo A</label>
-            <input value={editTeamA} onChange={e => setEditTeamA(e.target.value)} placeholder="Equipo A" />
+            <div className="edit-team-row">
+              <img src={getFlagUrl(editTeamA)} alt="" className="edit-flag" />
+              <input value={editTeamA} list="admin-teams-list" onChange={e => setEditTeamA(e.target.value)} placeholder="Equipo A" />
+            </div>
           </div>
           <div className="edit-field">
             <label>Equipo B</label>
-            <input value={editTeamB} onChange={e => setEditTeamB(e.target.value)} placeholder="Equipo B" />
+            <div className="edit-team-row">
+              <img src={getFlagUrl(editTeamB)} alt="" className="edit-flag" />
+              <input value={editTeamB} list="admin-teams-list" onChange={e => setEditTeamB(e.target.value)} placeholder="Equipo B" />
+            </div>
           </div>
           <div className="edit-field">
             <label>Fecha y hora (hora local)</label>
@@ -303,6 +313,9 @@ function AdminMatchCard({ match, onUpdate, onDelete }: { match: any; onUpdate: (
           .edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 1rem; }
           .edit-field { display: flex; flex-direction: column; gap: 0.25rem; }
           .edit-field label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+          .edit-team-row { display: flex; align-items: center; gap: 0.4rem; }
+          .edit-team-row input { flex: 1; }
+          .edit-flag { width: 28px; height: 18px; object-fit: cover; border-radius: 3px; border: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; }
           .edit-field input, .edit-field select {
             background: var(--bg-primary);
             border: 1px solid var(--border);

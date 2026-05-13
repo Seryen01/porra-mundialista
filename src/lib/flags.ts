@@ -51,14 +51,26 @@ const countryData: Record<string, { iso: string; code: string }> = {
   "Italia":                 { iso: "it", code: "ITA" },
 };
 
+// Sorted list of all WC 2026 country names (for autocomplete in admin)
+export const countryNames: string[] = Object.keys(countryData).sort((a, b) =>
+  a.localeCompare(b, "es")
+);
+
+function findEntry(teamName: string) {
+  if (countryData[teamName]) return countryData[teamName];
+  const lower = teamName.toLowerCase();
+  const found = Object.entries(countryData).find(([k]) => k.toLowerCase() === lower);
+  return found ? found[1] : null;
+}
+
 export function getFlagUrl(teamName: string): string {
-  const data = countryData[teamName];
+  const data = findEntry(teamName);
   if (!data) return "https://flagcdn.com/w80/un.png";
   return `https://flagcdn.com/w80/${data.iso}.png`;
 }
 
 export function getCode(teamName: string): string {
-  return countryData[teamName]?.code || teamName.substring(0, 3).toUpperCase();
+  return findEntry(teamName)?.code || teamName.substring(0, 3).toUpperCase();
 }
 
 // Keep emoji version as fallback

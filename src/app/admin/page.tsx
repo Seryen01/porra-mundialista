@@ -235,6 +235,14 @@ function AdminMatchCard({ match, onUpdate, onDelete }: { match: any; onUpdate: (
   // Edit mode states
   const [editTeamA, setEditTeamA] = useState(match.teamA);
   const [editTeamB, setEditTeamB] = useState(match.teamB);
+  const [suggestionsA, setSuggestionsA] = useState<string[]>([]);
+  const [suggestionsB, setSuggestionsB] = useState<string[]>([]);
+
+  function getSuggestions(val: string) {
+    if (val.length < 2) return [];
+    const v = val.toLowerCase();
+    return countryNames.filter(n => n.toLowerCase().includes(v)).slice(0, 8);
+  }
   
   // Formatear fecha para el input datetime-local
   const d = new Date(match.date);
@@ -259,9 +267,6 @@ function AdminMatchCard({ match, onUpdate, onDelete }: { match: any; onUpdate: (
           <span className="edit-title">✏️ Editar Partido</span>
           <button className="icon-btn" onClick={() => setIsEditing(false)}><X size={16} /></button>
         </div>
-        <datalist id="country-list">
-          {countryNames.map(name => <option key={name} value={name} />)}
-        </datalist>
         <div className="edit-grid">
           <div className="edit-field">
             <label>Equipo A</label>
@@ -270,11 +275,17 @@ function AdminMatchCard({ match, onUpdate, onDelete }: { match: any; onUpdate: (
               <input
                 className="team-input"
                 value={editTeamA}
-                list="country-list"
-                onChange={e => setEditTeamA(e.target.value)}
+                onChange={e => { setEditTeamA(e.target.value); setSuggestionsA(getSuggestions(e.target.value)); }}
+                onBlur={() => setTimeout(() => setSuggestionsA([]), 150)}
                 placeholder="Escribe el país…"
-                autoComplete="off"
               />
+              {suggestionsA.length > 0 && (
+                <ul className="suggestions">
+                  {suggestionsA.map(s => (
+                    <li key={s} onMouseDown={() => { setEditTeamA(s); setSuggestionsA([]); }}>{s}</li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
           <div className="edit-field">
@@ -284,11 +295,17 @@ function AdminMatchCard({ match, onUpdate, onDelete }: { match: any; onUpdate: (
               <input
                 className="team-input"
                 value={editTeamB}
-                list="country-list"
-                onChange={e => setEditTeamB(e.target.value)}
+                onChange={e => { setEditTeamB(e.target.value); setSuggestionsB(getSuggestions(e.target.value)); }}
+                onBlur={() => setTimeout(() => setSuggestionsB([]), 150)}
                 placeholder="Escribe el país…"
-                autoComplete="off"
               />
+              {suggestionsB.length > 0 && (
+                <ul className="suggestions">
+                  {suggestionsB.map(s => (
+                    <li key={s} onMouseDown={() => { setEditTeamB(s); setSuggestionsB([]); }}>{s}</li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
           <div className="edit-field">
@@ -319,14 +336,14 @@ function AdminMatchCard({ match, onUpdate, onDelete }: { match: any; onUpdate: (
         </div>
 
         <style jsx>{`
-          .edit-mode { padding: 1rem; border-color: var(--accent); }
+          .edit-mode { padding: 1rem; border-color: var(--accent); overflow: visible; }
           .edit-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
           .edit-title { font-weight: 700; font-size: 0.9rem; color: var(--gold); }
           .icon-btn { background: none; color: var(--text-muted); border: none; padding: 0; cursor: pointer; }
           .edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 1rem; }
           .edit-field { display: flex; flex-direction: column; gap: 0.25rem; }
           .edit-field label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-          .edit-field input, .edit-field select {
+          .edit-field input:not(.team-input), .edit-field select {
             background: var(--bg-primary);
             border: 1px solid var(--border);
             padding: 0.6rem;
@@ -335,8 +352,9 @@ function AdminMatchCard({ match, onUpdate, onDelete }: { match: any; onUpdate: (
             font-size: 0.8rem;
             font-family: inherit;
           }
-          .edit-field input:focus, .edit-field select:focus { outline: none; border-color: var(--gold); }
+          .edit-field input:not(.team-input):focus, .edit-field select:focus { outline: none; border-color: var(--gold); }
           .team-input-wrap {
+            position: relative;
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -364,6 +382,27 @@ function AdminMatchCard({ match, onUpdate, onDelete }: { match: any; onUpdate: (
             min-width: 0;
           }
           .team-input:focus { outline: none; }
+          .suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #1e1e3a;
+            border: 1px solid var(--border);
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            z-index: 200;
+          }
+          .suggestions li {
+            padding: 0.45rem 0.6rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            color: white;
+          }
+          .suggestions li:hover { background: rgba(255,255,255,0.08); }
           .edit-field select option, .edit-field select optgroup { background: #1a1a2e; color: white; }
           .edit-actions { display: flex; gap: 0.5rem; }
           .ac-btn { flex: 1; padding: 0.6rem; border-radius: 6px; font-weight: 700; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 0.3rem; border: none; cursor: pointer; }

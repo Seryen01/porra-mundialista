@@ -25,6 +25,7 @@ export default function Dashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [matches, setMatches] = useState<Match[]>([]);
+  const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,6 +33,9 @@ export default function Dashboard() {
       router.push("/login");
     } else if (status === "authenticated") {
       fetchMatches();
+      fetch("/api/profile")
+        .then(res => res.json())
+        .then(data => setUserData(data));
     }
   }, [status]);
 
@@ -71,8 +75,8 @@ export default function Dashboard() {
         <div className="header-right">
           <div className="user-chip" onClick={() => router.push('/profile')} style={{ cursor: 'pointer' }}>
             <div className="user-avatar-wrap">
-              {(session?.user as any)?.image ? (
-                <img src={(session?.user as any).image} alt="" className="user-avatar-img" />
+              {userData?.image ? (
+                <img src={userData.image} alt="" className="user-avatar-img" />
               ) : (
                 <span className="user-initial">{session?.user?.name?.[0]}</span>
               )}

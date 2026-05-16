@@ -2,16 +2,25 @@
 
 import { signOut, useSession } from "next-auth/react";
 import { LogOut, Shield, Mail, ChevronRight, Camera, Loader2 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function ProfilePage() {
-  const { data: session, update } = useSession();
+  const { data: session } = useSession();
   const [uploading, setUploading] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
   const [localImage, setLocalImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isAdmin = (session?.user as any)?.role === "ADMIN";
-  const userImage = localImage || (session?.user as any)?.image;
+  const userImage = localImage || userData?.image;
+
+  useEffect(() => {
+    if (session) {
+      fetch("/api/profile")
+        .then(res => res.json())
+        .then(data => setUserData(data));
+    }
+  }, [session]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -39,7 +48,6 @@ export default function ProfilePage() {
 
         if (res.ok) {
           setLocalImage(base64);
-          await update({ image: base64 });
         } else {
           alert("Error al actualizar la foto de perfil.");
         }

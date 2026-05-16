@@ -1,3 +1,4 @@
+// Force rebuild 2
 import type { Metadata, Viewport } from "next";
 import { Outfit } from "next/font/google";
 import "./globals.css";

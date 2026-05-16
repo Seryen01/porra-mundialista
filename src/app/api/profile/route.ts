@@ -5,16 +5,15 @@ import { prisma } from "@/lib/prisma";
 
 export async function PATCH(req: Request) {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session || !session.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
     const { image } = await req.json();
     
-    // In a production app, we would validate image size and type here
-    // or upload to S3/Cloudinary instead of storing Base64 in DB.
+    const userId = (session.user as any).id;
     
     const updatedUser = await prisma.user.update({
-      where: { id: session.user.id },
+      where: { id: userId },
       data: { image },
     });
 

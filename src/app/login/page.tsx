@@ -85,10 +85,35 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* No hint for privacy */}
+        <div className="motto animate-in stagger-2">
+          <p className="motto-text">"En esta porra no se juegan puntos, se juega el honor eterno entre amigos."</p>
+          <p className="motto-sub">Solo uno alcanzará la gloria en 2026.</p>
+        </div>
       </div>
 
       <style jsx>{`
+        .motto {
+          margin-top: 1.5rem;
+          text-align: center;
+          padding: 0 1rem;
+        }
+        .motto-text {
+          font-size: 0.9rem;
+          font-weight: 700;
+          font-style: italic;
+          background: linear-gradient(135deg, var(--gold), #f59e0b);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          line-height: 1.4;
+          margin-bottom: 0.4rem;
+        }
+        .motto-sub {
+          font-size: 0.7rem;
+          text-transform: uppercase;
+          letter-spacing: 0.15em;
+          color: var(--text-dim);
+          font-weight: 800;
+        }
         .login-page {
           min-height: 100vh;
           display: flex;

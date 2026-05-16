@@ -27,6 +27,7 @@ export default function Dashboard() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -73,21 +74,35 @@ export default function Dashboard() {
           <span className="match-count">{matches.length} partidos</span>
         </div>
         <div className="header-right">
-          <div className="user-chip" onClick={() => router.push('/profile')} style={{ cursor: 'pointer' }}>
-            <div className="user-avatar-wrap">
+          <div className="user-chip">
+            <div 
+              className="user-avatar-wrap" 
+              onClick={() => userData?.image && setShowModal(true)}
+              style={{ cursor: userData?.image ? 'pointer' : 'default' }}
+            >
               {userData?.image ? (
                 <img src={userData.image} alt="" className="user-avatar-img" />
               ) : (
-                <span className="user-initial">{session?.user?.name?.[0]}</span>
+                <span className="user-initial" onClick={() => router.push('/profile')} style={{ cursor: 'pointer' }}>{session?.user?.name?.[0]}</span>
               )}
             </div>
-            <div className="user-info">
+            <div className="user-info" onClick={() => router.push('/profile')} style={{ cursor: 'pointer' }}>
               <span className="user-name">{session?.user?.name}</span>
               <span className="user-stat">{totalPredictions}/{matches.length} apostados</span>
             </div>
           </div>
         </div>
       </header>
+
+      {/* Image Modal */}
+      {showModal && userData?.image && (
+        <div className="image-modal" onClick={() => setShowModal(false)}>
+          <div className="modal-content animate-in">
+            <img src={userData.image} alt="Avatar" />
+            <button className="close-modal">Cerrar</button>
+          </div>
+        </div>
+      )}
 
       {/* Progress bar */}
       <div className="progress-bar animate-in stagger-1">
@@ -168,6 +183,45 @@ export default function Dashboard() {
           color: #000;
           font-weight: 800;
           font-size: 0.85rem;
+        }
+
+        /* Image Modal */
+        .image-modal {
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0, 0, 0, 0.9);
+          z-index: 2000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 2rem;
+          backdrop-filter: blur(10px);
+        }
+        .modal-content {
+          position: relative;
+          max-width: 100%;
+          max-height: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 1.5rem;
+        }
+        .modal-content img {
+          max-width: 100%;
+          max-height: 80vh;
+          border-radius: 20px;
+          box-shadow: 0 0 40px rgba(0,0,0,0.5);
+          border: 2px solid rgba(255,255,255,0.1);
+        }
+        .close-modal {
+          background: var(--bg-card);
+          color: var(--text-primary);
+          border: 1px solid var(--border);
+          padding: 0.6rem 2rem;
+          border-radius: 30px;
+          font-weight: 700;
+          font-size: 0.9rem;
+          cursor: pointer;
         }
         .user-info {
           display: flex;

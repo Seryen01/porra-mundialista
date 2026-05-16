@@ -13,6 +13,7 @@ export default function ProfilePage() {
 
   const isAdmin = (session?.user as any)?.role === "ADMIN";
   const userImage = localImage || userData?.image;
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     if (session) {
@@ -66,7 +67,7 @@ export default function ProfilePage() {
       {/* Avatar card */}
       <div className="profile-hero card">
         <div className="avatar-edit-container">
-          <div className="avatar-ring">
+          <div className="avatar-ring" onClick={() => userImage && setShowModal(true)} style={{ cursor: userImage ? 'pointer' : 'default' }}>
             <div className="avatar-inner">
               {uploading ? (
                 <Loader2 className="animate-spin" />
@@ -100,6 +101,16 @@ export default function ProfilePage() {
           {isAdmin ? "Administrador" : "Jugador"}
         </div>
       </div>
+
+      {/* Image Modal */}
+      {showModal && userImage && (
+        <div className="image-modal" onClick={() => setShowModal(false)}>
+          <div className="modal-content animate-in">
+            <img src={userImage} alt="Avatar" />
+            <button className="close-modal">Cerrar</button>
+          </div>
+        </div>
+      )}
 
       {/* Info list */}
       <div className="info-list card animate-in stagger-1">
@@ -299,6 +310,47 @@ export default function ProfilePage() {
         .logout-btn:hover {
           background: rgba(239, 68, 68, 0.15);
           color: #ef4444;
+        }
+ 
+        .image-modal {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.9);
+          z-index: 2000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 2rem;
+          backdrop-filter: blur(10px);
+        }
+        .modal-content {
+          position: relative;
+          max-width: 100%;
+          max-height: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 1.5rem;
+        }
+        .modal-content img {
+          max-width: 100%;
+          max-height: 80vh;
+          border-radius: 20px;
+          box-shadow: 0 0 40px rgba(0,0,0,0.5);
+          border: 2px solid rgba(255,255,255,0.1);
+        }
+        .close-modal {
+          background: var(--bg-card);
+          color: var(--text-primary);
+          border: 1px solid var(--border);
+          padding: 0.6rem 2rem;
+          border-radius: 30px;
+          font-weight: 700;
+          font-size: 0.9rem;
+          cursor: pointer;
         }
       `}</style>
     </div>

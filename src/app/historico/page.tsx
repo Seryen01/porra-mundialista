@@ -50,6 +50,7 @@ export default function Historico() {
   const router = useRouter();
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -85,8 +86,18 @@ export default function Historico() {
       ) : (
         <div className="feed">
           {matches.map((match, i) => (
-            <HistoricoCard key={match.id} match={match} index={i} />
+            <HistoricoCard key={match.id} match={match} index={i} onShowImage={setSelectedImage} />
           ))}
+        </div>
+      )}
+
+      {/* Image Modal */}
+      {selectedImage && (
+        <div className="image-modal" onClick={() => setSelectedImage(null)}>
+          <div className="modal-content animate-in">
+            <img src={selectedImage} alt="Avatar" />
+            <button className="close-modal">Cerrar</button>
+          </div>
         </div>
       )}
 
@@ -118,12 +129,41 @@ export default function Historico() {
         }
         .empty-icon { font-size: 2.5rem; }
         .empty-sub { font-size: 0.75rem; color: var(--text-dim); }
+        .image-modal {
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0,0,0,0.85);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+          padding: 1rem;
+        }
+        .modal-content {
+          max-width: 400px;
+          width: 100%;
+        }
+        .modal-content img {
+          width: 100%;
+          border-radius: 12px;
+          box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .close-modal {
+          margin-top: 1rem;
+          width: 100%;
+          padding: 0.75rem;
+          background: rgba(255,255,255,0.1);
+          border: none;
+          color: white;
+          border-radius: 8px;
+          cursor: pointer;
+        }
       `}</style>
     </div>
   );
 }
 
-function HistoricoCard({ match, index }: { match: Match; index: number }) {
+function HistoricoCard({ match, index, onShowImage }: { match: Match; index: number; onShowImage: (img: string) => void }) {
   const winnerA = match.scoreA > match.scoreB;
   const winnerB = match.scoreB > match.scoreA;
   const draw = match.scoreA === match.scoreB;
@@ -178,7 +218,11 @@ function HistoricoCard({ match, index }: { match: Match; index: number }) {
             return (
               <div key={pred.id} className={`pred-row ${isExact ? 'exact' : ''} ${isCorrectResult ? 'correct' : ''} ${pred.points === 0 ? 'miss' : ''}`}>
                 <div className="pred-user">
-                  <div className="pred-avatar" style={{ background: getAvatarColor(pred.user.name) }}>
+                  <div 
+                    className="pred-avatar" 
+                    style={{ background: getAvatarColor(pred.user.name), cursor: pred.user.image ? 'pointer' : 'default' }}
+                    onClick={() => pred.user.image && onShowImage(pred.user.image)}
+                  >
                     {pred.user.image ? <img src={pred.user.image} alt="" className="pred-avatar-img" /> : pred.user.name[0]}
                   </div>
                   <span className="pred-name">{pred.user.name}</span>

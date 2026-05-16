@@ -26,6 +26,7 @@ export default function Leaderboard() {
   const router = useRouter();
   const [data, setData] = useState<LeaderboardUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -65,7 +66,11 @@ export default function Leaderboard() {
         <div className="podium animate-in stagger-1">
           {/* 2nd place */}
           <div className="podium-item second">
-            <div className="podium-avatar" style={{ background: avatarColors[1] }}>
+            <div 
+              className="podium-avatar" 
+              style={{ background: avatarColors[1], cursor: data[1].image ? 'pointer' : 'default' }}
+              onClick={() => data[1].image && setSelectedImage(data[1].image)}
+            >
               {data[1].image ? <img src={data[1].image} alt="" className="lb-avatar-img" /> : data[1].name[0]}
             </div>
             <span className="podium-name">{data[1].name}</span>
@@ -75,7 +80,11 @@ export default function Leaderboard() {
           {/* 1st place */}
           <div className="podium-item first">
             <div className="crown">👑</div>
-            <div className="podium-avatar large" style={{ background: avatarColors[0] }}>
+            <div 
+              className="podium-avatar large" 
+              style={{ background: avatarColors[0], cursor: data[0].image ? 'pointer' : 'default' }}
+              onClick={() => data[0].image && setSelectedImage(data[0].image)}
+            >
               {data[0].image ? <img src={data[0].image} alt="" className="lb-avatar-img" /> : data[0].name[0]}
             </div>
             <span className="podium-name">{data[0].name}</span>
@@ -84,7 +93,11 @@ export default function Leaderboard() {
           </div>
           {/* 3rd place */}
           <div className="podium-item third">
-            <div className="podium-avatar" style={{ background: avatarColors[2] }}>
+            <div 
+              className="podium-avatar" 
+              style={{ background: avatarColors[2], cursor: data[2].image ? 'pointer' : 'default' }}
+              onClick={() => data[2].image && setSelectedImage(data[2].image)}
+            >
               {data[2].image ? <img src={data[2].image} alt="" className="lb-avatar-img" /> : data[2].name[0]}
             </div>
             <span className="podium-name">{data[2].name}</span>
@@ -107,7 +120,11 @@ export default function Leaderboard() {
                   <span className="lb-rank-num">{index + 1}</span>
                 )}
               </div>
-              <div className="lb-avatar" style={{ background: avatarColors[index % avatarColors.length] }}>
+              <div 
+                className="lb-avatar" 
+                style={{ background: avatarColors[index % avatarColors.length], cursor: user.image ? 'pointer' : 'default' }}
+                onClick={() => user.image && setSelectedImage(user.image)}
+              >
                 {user.image ? <img src={user.image} alt="" className="lb-avatar-img" /> : user.name[0]}
               </div>
               <div className="lb-info">
@@ -127,6 +144,16 @@ export default function Leaderboard() {
           );
         })}
       </div>
+
+      {/* Image Modal */}
+      {selectedImage && (
+        <div className="image-modal" onClick={() => setSelectedImage(null)}>
+          <div className="modal-content animate-in">
+            <img src={selectedImage} alt="Avatar" />
+            <button className="close-modal">Cerrar</button>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         .lb-header h1 {
@@ -170,6 +197,7 @@ export default function Leaderboard() {
           font-weight: 800;
           font-size: 1rem;
           color: #000;
+          overflow: hidden;
         }
         .podium-avatar.large {
           width: 56px;
@@ -262,6 +290,7 @@ export default function Leaderboard() {
           font-size: 0.85rem;
           color: #000;
           flex-shrink: 0;
+          overflow: hidden;
         }
         .lb-info {
           flex: 1;
@@ -313,6 +342,48 @@ export default function Leaderboard() {
           text-transform: uppercase;
           font-weight: 600;
           margin-left: 2px;
+        }
+
+        /* Image Modal */
+        .image-modal {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.9);
+          z-index: 2000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 2rem;
+          backdrop-filter: blur(10px);
+        }
+        .modal-content {
+          position: relative;
+          max-width: 100%;
+          max-height: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 1.5rem;
+        }
+        .modal-content img {
+          max-width: 100%;
+          max-height: 80vh;
+          border-radius: 20px;
+          box-shadow: 0 0 40px rgba(0,0,0,0.5);
+          border: 2px solid rgba(255,255,255,0.1);
+        }
+        .close-modal {
+          background: var(--bg-card);
+          color: var(--text-primary);
+          border: 1px solid var(--border);
+          padding: 0.6rem 2rem;
+          border-radius: 30px;
+          font-weight: 700;
+          font-size: 0.9rem;
+          cursor: pointer;
         }
       `}</style>
     </div>

@@ -86,8 +86,8 @@ export default function LoginPage() {
         </form>
 
         <div className="motto animate-in stagger-2">
-          <p className="motto-text">"En esta porra no se juegan puntos, se juega el honor eterno entre amigos."</p>
-          <p className="motto-sub">Solo uno alcanzará la gloria en 2026.</p>
+          <p className="motto-text">"Amistades en pausa, memes despiadados y una cuenta que pagar. El ganador se lleva la gloria... y la factura del último."</p>
+          <p className="motto-sub">Mundial 2026: ¿Quién invitará a quién?</p>
         </div>
       </div>
 

@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 interface LeaderboardUser {
   id: string;
   name: string;
+  image?: string | null;
   points: number;
 }
 
@@ -65,7 +66,7 @@ export default function Leaderboard() {
           {/* 2nd place */}
           <div className="podium-item second">
             <div className="podium-avatar" style={{ background: avatarColors[1] }}>
-              {data[1].name[0]}
+              {data[1].image ? <img src={data[1].image} alt="" className="lb-avatar-img" /> : data[1].name[0]}
             </div>
             <span className="podium-name">{data[1].name}</span>
             <span className="podium-pts">{data[1].points} pts</span>
@@ -75,7 +76,7 @@ export default function Leaderboard() {
           <div className="podium-item first">
             <div className="crown">👑</div>
             <div className="podium-avatar large" style={{ background: avatarColors[0] }}>
-              {data[0].name[0]}
+              {data[0].image ? <img src={data[0].image} alt="" className="lb-avatar-img" /> : data[0].name[0]}
             </div>
             <span className="podium-name">{data[0].name}</span>
             <span className="podium-pts">{data[0].points} pts</span>
@@ -84,7 +85,7 @@ export default function Leaderboard() {
           {/* 3rd place */}
           <div className="podium-item third">
             <div className="podium-avatar" style={{ background: avatarColors[2] }}>
-              {data[2].name[0]}
+              {data[2].image ? <img src={data[2].image} alt="" className="lb-avatar-img" /> : data[2].name[0]}
             </div>
             <span className="podium-name">{data[2].name}</span>
             <span className="podium-pts">{data[2].points} pts</span>
@@ -107,7 +108,7 @@ export default function Leaderboard() {
                 )}
               </div>
               <div className="lb-avatar" style={{ background: avatarColors[index % avatarColors.length] }}>
-                {user.name[0]}
+                {user.image ? <img src={user.image} alt="" className="lb-avatar-img" /> : user.name[0]}
               </div>
               <div className="lb-info">
                 <span className="lb-name">
@@ -175,6 +176,12 @@ export default function Leaderboard() {
           height: 56px;
           font-size: 1.2rem;
           box-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+        }
+        .lb-avatar-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          border-radius: 50%;
         }
         .podium-name {
           font-size: 0.75rem;

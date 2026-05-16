@@ -12,7 +12,7 @@ interface Prediction {
   predictedScoreA: number;
   predictedScoreB: number;
   points: number;
-  user: { id: string; name: string };
+  user: { id: string; name: string; image?: string | null };
 }
 
 interface Match {
@@ -179,7 +179,7 @@ function HistoricoCard({ match, index }: { match: Match; index: number }) {
               <div key={pred.id} className={`pred-row ${isExact ? 'exact' : ''} ${isCorrectResult ? 'correct' : ''} ${pred.points === 0 ? 'miss' : ''}`}>
                 <div className="pred-user">
                   <div className="pred-avatar" style={{ background: getAvatarColor(pred.user.name) }}>
-                    {pred.user.name[0]}
+                    {pred.user.image ? <img src={pred.user.image} alt="" className="pred-avatar-img" /> : pred.user.name[0]}
                   </div>
                   <span className="pred-name">{pred.user.name}</span>
                 </div>
@@ -354,6 +354,12 @@ function HistoricoCard({ match, index }: { match: Match; index: number }) {
           font-size: 0.7rem;
           color: #000;
           flex-shrink: 0;
+          overflow: hidden;
+        }
+        .pred-avatar-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
         }
         .pred-name {
           font-size: 0.8rem;

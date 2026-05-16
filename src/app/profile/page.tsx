@@ -1,11 +1,53 @@
 "use client";
 
 import { signOut, useSession } from "next-auth/react";
-import { LogOut, Shield, Mail, ChevronRight } from "lucide-react";
+import { LogOut, Shield, Mail, ChevronRight, Camera, Loader2 } from "lucide-react";
+import { useRef, useState } from "react";
 
 export default function ProfilePage() {
-  const { data: session } = useSession();
+  const { data: session, update } = useSession();
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const isAdmin = (session?.user as any)?.role === "ADMIN";
+  const userImage = (session?.user as any)?.image;
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Basic size validation (2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      alert("La imagen es demasiado grande. El máximo es 2MB.");
+      return;
+    }
+
+    setUploading(true);
+    
+    try {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async () => {
+        const base64 = reader.result as string;
+        
+        const res = await fetch("/api/profile", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: base64 }),
+        });
+
+        if (res.ok) {
+          await update({ image: base64 });
+        } else {
+          alert("Error al actualizar la foto de perfil.");
+        }
+        setUploading(false);
+      };
+    } catch (error) {
+      console.error(error);
+      setUploading(false);
+    }
+  };
 
   return (
     <div className="profile animate-in">
@@ -13,10 +55,33 @@ export default function ProfilePage() {
 
       {/* Avatar card */}
       <div className="profile-hero card">
-        <div className="avatar-ring">
-          <div className="avatar-inner">
-            {session?.user?.name?.[0]}
+        <div className="avatar-edit-container">
+          <div className="avatar-ring">
+            <div className="avatar-inner">
+              {uploading ? (
+                <Loader2 className="animate-spin" />
+              ) : userImage ? (
+                <img src={userImage} alt="" className="avatar-img" />
+              ) : (
+                session?.user?.name?.[0]
+              )}
+            </div>
           </div>
+          <button 
+            className="edit-avatar-btn" 
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            title="Cambiar foto de perfil"
+          >
+            <Camera size={14} />
+          </button>
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleFileChange} 
+            accept="image/*" 
+            hidden 
+          />
         </div>
         <h2 className="profile-name">{session?.user?.name}</h2>
         <span className="profile-email">{session?.user?.email}</span>
@@ -70,13 +135,19 @@ export default function ProfilePage() {
           margin-bottom: 1rem;
           text-align: center;
         }
+        .avatar-edit-container {
+          position: relative;
+          margin-bottom: 1rem;
+          display: flex;
+          justify-content: center;
+        }
         .avatar-ring {
           width: 80px;
           height: 80px;
           border-radius: 50%;
           background: linear-gradient(135deg, var(--green), #00e676);
           padding: 3px;
-          margin-bottom: 1rem;
+          margin-bottom: 0;
         }
         .avatar-inner {
           width: 100%;
@@ -86,9 +157,39 @@ export default function ProfilePage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 1.8rem;
+          font-size: 2.2rem;
           font-weight: 800;
           color: var(--green);
+          overflow: hidden;
+        }
+        .avatar-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        .edit-avatar-btn {
+          position: absolute;
+          bottom: -2px;
+          right: -2px;
+          width: 30px;
+          height: 30px;
+          border-radius: 50%;
+          background: var(--gold);
+          color: black;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 3px solid var(--bg-card);
+          cursor: pointer;
+          transition: transform 0.2s;
+          z-index: 10;
+        }
+        .edit-avatar-btn:hover {
+          transform: scale(1.1);
+        }
+        .edit-avatar-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
         .profile-name {
           font-size: 1.3rem;

@@ -12,7 +12,7 @@ export async function GET() {
     orderBy: { date: "desc" },
     include: {
       predictions: {
-        include: { user: { select: { id: true, name: true } } },
+        include: { user: { select: { id: true, name: true, image: true } } },
         orderBy: { points: "desc" },
       },
     },

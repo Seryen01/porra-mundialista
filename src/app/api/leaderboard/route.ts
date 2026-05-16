@@ -6,6 +6,7 @@ export async function GET() {
     select: {
       id: true,
       name: true,
+      image: true,
       predictions: {
         select: {
           points: true,
@@ -27,6 +28,7 @@ export async function GET() {
     return {
       id: user.id,
       name: user.name,
+      image: user.image,
       points: totalPoints,
       matchPoints,
       bonusPoints

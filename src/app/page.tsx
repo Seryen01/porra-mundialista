@@ -69,8 +69,14 @@ export default function Dashboard() {
           <span className="match-count">{matches.length} partidos</span>
         </div>
         <div className="header-right">
-          <div className="user-chip">
-            <span className="user-initial">{session?.user?.name?.[0]}</span>
+          <div className="user-chip" onClick={() => router.push('/profile')} style={{ cursor: 'pointer' }}>
+            <div className="user-avatar-wrap">
+              {(session?.user as any)?.image ? (
+                <img src={(session?.user as any).image} alt="" className="user-avatar-img" />
+              ) : (
+                <span className="user-initial">{session?.user?.name?.[0]}</span>
+              )}
+            </div>
             <div className="user-info">
               <span className="user-name">{session?.user?.name}</span>
               <span className="user-stat">{totalPredictions}/{matches.length} apostados</span>
@@ -138,15 +144,24 @@ export default function Dashboard() {
           border-radius: 28px;
           border: 1px solid var(--border);
         }
-        .user-initial {
+        .user-avatar-wrap {
           width: 32px;
           height: 32px;
           border-radius: 50%;
           background: linear-gradient(135deg, var(--green), #00e676);
-          color: #000;
           display: flex;
           align-items: center;
           justify-content: center;
+          overflow: hidden;
+          flex-shrink: 0;
+        }
+        .user-avatar-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        .user-initial {
+          color: #000;
           font-weight: 800;
           font-size: 0.85rem;
         }

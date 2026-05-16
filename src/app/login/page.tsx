@@ -85,11 +85,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Hint */}
-        <div className="hint">
-          <p>Usa <strong>tunombre@porra.com</strong></p>
-          <p className="hint-small">Contraseña: porra2026</p>
-        </div>
+        {/* No hint for privacy */}
       </div>
 
       <style jsx>{`
@@ -236,19 +232,6 @@ export default function LoginPage() {
           animation: spin 0.6s linear infinite;
         }
 
-        .hint {
-          text-align: center;
-          color: var(--text-dim);
-          font-size: 0.82rem;
-        }
-        .hint strong {
-          color: var(--text-secondary);
-        }
-        .hint-small {
-          font-size: 0.72rem;
-          margin-top: 0.3rem;
-          opacity: 0.7;
-        }
 
         @keyframes spin {
           to { transform: rotate(360deg); }

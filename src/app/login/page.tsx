@@ -86,8 +86,8 @@ export default function LoginPage() {
         </form>
 
         <div className="motto animate-in stagger-2">
-          <p className="motto-text">"Amistades en pausa, memes despiadados y una cuenta que pagar. El ganador se lleva la gloria... y la factura del último."</p>
-          <p className="motto-sub">Mundial 2026: ¿Quién invitará a quién?</p>
+          <p className="motto-text">"Bienvenidos a la porra del Mundial 2026 donde hay dos tipos de personas: los que cenan gratis y los que financian la fiesta."</p>
+          <p className="motto-sub">Decide en qué bando quieres estar.</p>
         </div>
       </div>
 

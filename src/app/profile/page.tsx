@@ -7,10 +7,11 @@ import { useRef, useState } from "react";
 export default function ProfilePage() {
   const { data: session, update } = useSession();
   const [uploading, setUploading] = useState(false);
+  const [localImage, setLocalImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isAdmin = (session?.user as any)?.role === "ADMIN";
-  const userImage = (session?.user as any)?.image;
+  const userImage = localImage || (session?.user as any)?.image;
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -37,6 +38,7 @@ export default function ProfilePage() {
         });
 
         if (res.ok) {
+          setLocalImage(base64);
           await update({ image: base64 });
         } else {
           alert("Error al actualizar la foto de perfil.");

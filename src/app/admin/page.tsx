@@ -550,11 +550,13 @@ function BonusSettingsSection() {
   const [topScorerPoints, setTopScorerPoints] = useState(10);
   const [championPoints, setChampionPoints] = useState(15);
   const [spainPoints, setSpainPoints] = useState(10);
+  const [mvpPoints, setMvpPoints] = useState(10);
 
   // Resultados finales
   const [actualTopScorer, setActualTopScorer] = useState("");
   const [actualChampion, setActualChampion] = useState("");
   const [actualSpainResult, setActualSpainResult] = useState("");
+  const [actualMvp, setActualMvp] = useState("");
 
   useEffect(() => {
     fetchSettings();
@@ -569,9 +571,11 @@ function BonusSettingsSection() {
         setTopScorerPoints(data.topScorerPoints ?? 10);
         setChampionPoints(data.championPoints ?? 15);
         setSpainPoints(data.spainPoints ?? 10);
+        setMvpPoints(data.mvpPoints ?? 10);
         setActualTopScorer(data.actualTopScorer ?? "");
         setActualChampion(data.actualChampion ?? "");
         setActualSpainResult(data.actualSpainResult ?? "");
+        setActualMvp(data.actualMvp ?? "");
       }
     }
     setLoading(false);
@@ -588,9 +592,11 @@ function BonusSettingsSection() {
         topScorerPoints,
         championPoints,
         spainPoints,
+        mvpPoints,
         actualTopScorer,
         actualChampion,
-        actualSpainResult
+        actualSpainResult,
+        actualMvp,
       }),
     });
     setSaving(false);
@@ -619,6 +625,10 @@ function BonusSettingsSection() {
             <label>Pts España</label>
             <input type="number" value={spainPoints} onChange={e => setSpainPoints(parseInt(e.target.value))} required />
           </div>
+          <div>
+            <label>Pts MVP</label>
+            <input type="number" value={mvpPoints} onChange={e => setMvpPoints(parseInt(e.target.value))} required />
+          </div>
         </div>
 
         <h4 className="section-title">Resultados Finales Oficiales</h4>
@@ -643,6 +653,10 @@ function BonusSettingsSection() {
               <option value="Final">Final</option>
               <option value="Campeón">Campeón</option>
             </select>
+          </div>
+          <div>
+            <label>MVP Oficial</label>
+            <input type="text" value={actualMvp} onChange={e => setActualMvp(e.target.value)} placeholder="Dejar en blanco si no ha terminado" />
           </div>
         </div>
 

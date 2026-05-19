@@ -29,7 +29,7 @@ export async function PATCH(req: Request) {
   }
 
   const body = await req.json();
-  const { topScorerPoints, championPoints, spainPoints, actualTopScorer, actualChampion, actualSpainResult } = body;
+  const { topScorerPoints, championPoints, spainPoints, mvpPoints, actualTopScorer, actualChampion, actualSpainResult, actualMvp } = body;
 
   const settings = await prisma.appSettings.upsert({
     where: { id: "default" },
@@ -37,25 +37,29 @@ export async function PATCH(req: Request) {
       topScorerPoints: topScorerPoints !== undefined ? parseInt(topScorerPoints) : undefined,
       championPoints: championPoints !== undefined ? parseInt(championPoints) : undefined,
       spainPoints: spainPoints !== undefined ? parseInt(spainPoints) : undefined,
+      mvpPoints: mvpPoints !== undefined ? parseInt(mvpPoints) : undefined,
       actualTopScorer: actualTopScorer !== undefined ? actualTopScorer : undefined,
       actualChampion: actualChampion !== undefined ? actualChampion : undefined,
       actualSpainResult: actualSpainResult !== undefined ? actualSpainResult : undefined,
+      actualMvp: actualMvp !== undefined ? actualMvp : undefined,
     },
     create: {
       id: "default",
       topScorerPoints: topScorerPoints !== undefined ? parseInt(topScorerPoints) : 10,
       championPoints: championPoints !== undefined ? parseInt(championPoints) : 15,
       spainPoints: spainPoints !== undefined ? parseInt(spainPoints) : 10,
+      mvpPoints: mvpPoints !== undefined ? parseInt(mvpPoints) : 10,
       actualTopScorer,
       actualChampion,
       actualSpainResult,
+      actualMvp,
     }
   });
 
   // Si se envían resultados, recalculamos automáticamente todos los bonus
-  if (actualTopScorer !== undefined || actualChampion !== undefined || actualSpainResult !== undefined) {
+  if (actualTopScorer !== undefined || actualChampion !== undefined || actualSpainResult !== undefined || actualMvp !== undefined) {
     const allBonuses = await prisma.userBonus.findMany();
-    
+
     for (const b of allBonuses) {
       let total = 0;
       if (settings.actualTopScorer && b.topScorer && b.topScorer.trim().toLowerCase() === settings.actualTopScorer.trim().toLowerCase()) {
@@ -67,7 +71,10 @@ export async function PATCH(req: Request) {
       if (settings.actualSpainResult && b.spainResult === settings.actualSpainResult) {
         total += settings.spainPoints;
       }
-      
+      if (settings.actualMvp && b.mvp && b.mvp.trim().toLowerCase() === settings.actualMvp.trim().toLowerCase()) {
+        total += settings.mvpPoints;
+      }
+
       await prisma.userBonus.update({
         where: { id: b.id },
         data: { points: total }

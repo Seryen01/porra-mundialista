@@ -29,13 +29,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "El torneo ya ha comenzado. No se pueden modificar los bonus." }, { status: 400 });
   }
 
-  const { topScorer, champion, spainResult } = await req.json();
+  const { topScorer, champion, spainResult, mvp } = await req.json();
   const userId = (session.user as any).id;
 
   const bonus = await prisma.userBonus.upsert({
     where: { userId },
-    update: { topScorer, champion, spainResult },
-    create: { userId, topScorer, champion, spainResult }
+    update: { topScorer, champion, spainResult, mvp },
+    create: { userId, topScorer, champion, spainResult, mvp }
   });
 
   return NextResponse.json(bonus);

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { getFlagUrl, getCode } from "@/lib/flags";
-import { Lock, Check, Pencil } from "lucide-react";
+import { Lock, Check, Pencil, ChevronDown, ChevronUp } from "lucide-react";
 
 interface Match {
   id: string;
@@ -28,6 +28,14 @@ export default function Dashboard() {
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [expandedDates, setExpandedDates] = useState<Record<string, boolean>>({});
+
+  const toggleDate = (date: string) => {
+    setExpandedDates(prev => ({
+      ...prev,
+      [date]: !prev[date]
+    }));
+  };
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -118,20 +126,37 @@ export default function Dashboard() {
           <p>No hay partidos programados aún.</p>
         </div>
       ) : (
-        Object.entries(groupedMatches).map(([date, dateMatches], groupIndex) => (
-          <div key={date} className="date-group animate-in" style={{ animationDelay: `${0.1 + groupIndex * 0.05}s` }}>
-            <div className="date-header">
-              <div className="date-dot" />
-              <h2 className="date-title">{date}</h2>
-              <span className="date-count">{dateMatches.length} partidos</span>
+        Object.entries(groupedMatches).map(([date, dateMatches], groupIndex) => {
+          const uniquePhases = Array.from(new Set(dateMatches.map(m => m.phase)));
+          const allGroups = uniquePhases.every(p => p && p.toLowerCase().includes("grupo"));
+          const phase = allGroups ? "Fase de Grupos" : uniquePhases.join(" & ");
+          return (
+            <div key={date} className="date-group animate-in" style={{ animationDelay: `${0.1 + groupIndex * 0.05}s` }}>
+              <div 
+                className="date-header" 
+                onClick={() => toggleDate(date)} 
+                style={{ cursor: 'pointer', userSelect: 'none' }}
+              >
+                <div className="date-dot" />
+                <div className="date-title-wrap">
+                  <span className="phase-pill">{phase}</span>
+                  <h2 className="date-title">{date}</h2>
+                </div>
+                <span className="date-count">{dateMatches.length} partidos</span>
+                <div className="date-chevron">
+                  {expandedDates[date] ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                </div>
+              </div>
+              {expandedDates[date] && (
+                <div className="matches-list animate-in">
+                  {dateMatches.map((match) => (
+                    <MatchCard key={match.id} match={match} onUpdate={fetchMatches} />
+                  ))}
+                </div>
+              )}
             </div>
-            <div className="matches-list">
-              {dateMatches.map((match) => (
-                <MatchCard key={match.id} match={match} onUpdate={fetchMatches} />
-              ))}
-            </div>
-          </div>
-        ))
+          );
+        })
       )}
 
       <style jsx>{`
@@ -259,6 +284,12 @@ export default function Dashboard() {
           align-items: center;
           gap: 0.6rem;
           margin-bottom: 0.75rem;
+          padding: 0.5rem;
+          border-radius: 8px;
+          transition: background 0.2s;
+        }
+        .date-header:hover {
+          background: rgba(255, 255, 255, 0.05);
         }
         .date-dot {
           width: 8px;
@@ -267,13 +298,25 @@ export default function Dashboard() {
           background: var(--green);
           flex-shrink: 0;
         }
+        .date-title-wrap {
+          display: flex;
+          flex-direction: column;
+          flex: 1;
+        }
+        .phase-pill {
+          font-size: 0.6rem;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          color: var(--gold);
+          margin-bottom: 2px;
+        }
         .date-title {
           font-size: 0.85rem;
           text-transform: capitalize;
           color: var(--text-secondary);
           font-weight: 600;
           margin-bottom: 0;
-          flex: 1;
         }
         .date-count {
           font-size: 0.7rem;
@@ -281,6 +324,12 @@ export default function Dashboard() {
           background: var(--bg-card);
           padding: 2px 8px;
           border-radius: 10px;
+        }
+        .date-chevron {
+          color: var(--text-dim);
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
         .matches-list {
           display: flex;
@@ -695,6 +744,7 @@ function BonusSection() {
   const [topScorer, setTopScorer] = useState("");
   const [champion, setChampion] = useState("");
   const [spainResult, setSpainResult] = useState("");
+  const [mvp, setMvp] = useState("");
   const [saving, setSaving] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
 
@@ -713,6 +763,7 @@ function BonusSection() {
         setTopScorer(data.topScorer || "");
         setChampion(data.champion || "");
         setSpainResult(data.spainResult || "");
+        setMvp(data.mvp || "");
       }
     }
     setLoading(false);
@@ -723,7 +774,7 @@ function BonusSection() {
     setSaving(true);
     await fetch("/api/bonus", {
       method: "POST",
-      body: JSON.stringify({ topScorer, champion, spainResult }),
+      body: JSON.stringify({ topScorer, champion, spainResult, mvp }),
     });
     setSaving(false);
     fetchBonus();
@@ -778,7 +829,17 @@ function BonusSection() {
             <option value="Campeón">Campeón</option>
           </select>
         </div>
-        
+        <div className="bf-group">
+          <label>MVP del Mundial</label>
+          <input
+            type="text"
+            placeholder="Ej. Vinicius Jr."
+            value={mvp}
+            onChange={e => setMvp(e.target.value)}
+            disabled={isLocked || saving}
+          />
+        </div>
+
         {!isLocked && (
           <button type="submit" className="bf-btn" disabled={saving}>
             {saving ? "Guardando..." : "Guardar Bonus"}

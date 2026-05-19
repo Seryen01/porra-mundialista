@@ -128,8 +128,13 @@ export default function Dashboard() {
       ) : (
         Object.entries(groupedMatches).map(([date, dateMatches], groupIndex) => {
           const uniquePhases = Array.from(new Set(dateMatches.map(m => m.phase)));
-          const allGroups = uniquePhases.every(p => p && p.toLowerCase().includes("grupo"));
-          const phase = allGroups ? "Fase de Grupos" : uniquePhases.join(" & ");
+          const hasGroups = uniquePhases.some(p => p && p.toLowerCase().includes("grupo"));
+          const hasKnockout = uniquePhases.some(p => p && !p.toLowerCase().includes("grupo"));
+          const phase = hasGroups && hasKnockout
+            ? "Fase de Grupos & Dieciseisavos"
+            : hasGroups
+            ? "Fase de Grupos"
+            : uniquePhases.join(" & ");
           return (
             <div key={date} className="date-group animate-in" style={{ animationDelay: `${0.1 + groupIndex * 0.05}s` }}>
               <div 

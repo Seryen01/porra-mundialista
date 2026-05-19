@@ -9,6 +9,8 @@ interface LeaderboardUser {
   name: string;
   image?: string | null;
   points: number;
+  matchPoints: number;
+  bonusPoints: number;
 }
 
 const avatarColors = [
@@ -21,10 +23,31 @@ const avatarColors = [
   "linear-gradient(135deg, #10b981, #059669)",
 ];
 
+const EARN_PRIZES = [
+  { emoji: "🏆", label: "Cobra 50€" },
+  { emoji: "🥈", label: "Cobra 35€" },
+  { emoji: "🥉", label: "Cobra 20€" },
+];
+const PAY_PRIZES = [
+  { emoji: "💸", label: "Paga 50€" },
+  { emoji: "💸", label: "Paga 35€" },
+  { emoji: "💸", label: "Paga 20€" },
+];
+
+function getPrizeBadge(index: number, total: number) {
+  // Earn badges take priority if there's overlap (small groups)
+  if (index < 3) return { ...EARN_PRIZES[index], type: "earn" as const };
+  if (index === total - 1) return { ...PAY_PRIZES[0], type: "pay" as const };
+  if (index === total - 2) return { ...PAY_PRIZES[1], type: "pay" as const };
+  if (index === total - 3) return { ...PAY_PRIZES[2], type: "pay" as const };
+  return null;
+}
+
 export default function Leaderboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [data, setData] = useState<LeaderboardUser[]>([]);
+  const [allFinished, setAllFinished] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
@@ -39,7 +62,8 @@ export default function Leaderboard() {
   const fetchLeaderboard = async () => {
     const res = await fetch("/api/leaderboard");
     const json = await res.json();
-    setData(json);
+    setData(json.users);
+    setAllFinished(json.allFinished);
     setLoading(false);
   };
 
@@ -66,8 +90,8 @@ export default function Leaderboard() {
         <div className="podium animate-in stagger-1">
           {/* 2nd place */}
           <div className="podium-item second">
-            <div 
-              className="podium-avatar" 
+            <div
+              className="podium-avatar"
               style={{ background: avatarColors[1], cursor: data[1].image ? 'pointer' : 'default' }}
               onClick={() => data[1].image && setSelectedImage(data[1].image)}
             >
@@ -80,8 +104,8 @@ export default function Leaderboard() {
           {/* 1st place */}
           <div className="podium-item first">
             <div className="crown">👑</div>
-            <div 
-              className="podium-avatar large" 
+            <div
+              className="podium-avatar large"
               style={{ background: avatarColors[0], cursor: data[0].image ? 'pointer' : 'default' }}
               onClick={() => data[0].image && setSelectedImage(data[0].image)}
             >
@@ -93,8 +117,8 @@ export default function Leaderboard() {
           </div>
           {/* 3rd place */}
           <div className="podium-item third">
-            <div 
-              className="podium-avatar" 
+            <div
+              className="podium-avatar"
               style={{ background: avatarColors[2], cursor: data[2].image ? 'pointer' : 'default' }}
               onClick={() => data[2].image && setSelectedImage(data[2].image)}
             >
@@ -111,27 +135,36 @@ export default function Leaderboard() {
       <div className="lb-list card animate-in stagger-2">
         {data.map((user, index) => {
           const isMe = user.id === currentUserId;
+          const badge = allFinished ? getPrizeBadge(index, data.length) : null;
+          const rowExtra = badge?.type === "earn" ? "earn-row" : badge?.type === "pay" ? "pay-row" : isMe ? "is-me" : "";
           return (
-            <div key={user.id} className={`lb-item ${isMe ? 'is-me' : ''}`}>
+            <div key={user.id} className={`lb-item ${rowExtra}`}>
               <div className="lb-rank">
                 {index < 3 ? (
-                  <span className={`lb-medal medal-${index}`}>{["🥇", "🥈", "🥉"][index]}</span>
+                  <span className="lb-medal">{["🥇", "🥈", "🥉"][index]}</span>
                 ) : (
                   <span className="lb-rank-num">{index + 1}</span>
                 )}
               </div>
-              <div 
-                className="lb-avatar" 
+              <div
+                className="lb-avatar"
                 style={{ background: avatarColors[index % avatarColors.length], cursor: user.image ? 'pointer' : 'default' }}
                 onClick={() => user.image && setSelectedImage(user.image)}
               >
                 {user.image ? <img src={user.image} alt="" className="lb-avatar-img" /> : user.name[0]}
               </div>
               <div className="lb-info">
-                <span className="lb-name">
-                  {user.name}
-                  {isMe && <span className="lb-you">Tú</span>}
-                </span>
+                <div className="lb-name-row">
+                  <span className="lb-name">
+                    {user.name}
+                    {isMe && <span className="lb-you">Tú</span>}
+                  </span>
+                  {badge && (
+                    <span className={`prize-badge prize-${badge.type}`}>
+                      {badge.emoji} {badge.label}
+                    </span>
+                  )}
+                </div>
                 <div className="lb-bar-wrap">
                   <div className="lb-bar-fill" style={{ width: `${(user.points / maxPoints) * 100}%` }} />
                 </div>
@@ -144,6 +177,13 @@ export default function Leaderboard() {
           );
         })}
       </div>
+
+      {/* Prize explanation — only when porra is finished */}
+      {allFinished && (
+        <p className="prize-footer animate-in stagger-3">
+          🍽️ <strong>Premios de la porra:</strong> el último paga la cena al primero (máx. 50 €), el penúltimo al segundo (máx. 35 €) y el antepenúltimo al tercero (máx. 20 €).
+        </p>
+      )}
 
       {/* Image Modal */}
       {selectedImage && (
@@ -258,22 +298,30 @@ export default function Leaderboard() {
           border-radius: 10px;
           gap: 0.7rem;
           transition: background 0.2s;
+          border: 1px solid transparent;
         }
         .lb-item:hover {
           background: rgba(255,255,255,0.03);
         }
         .lb-item.is-me {
           background: var(--green-glow);
-          border: 1px solid rgba(0, 200, 83, 0.15);
+          border-color: rgba(0, 200, 83, 0.15);
         }
+        .lb-item.earn-row {
+          background: rgba(0, 200, 83, 0.06);
+          border-color: rgba(0, 200, 83, 0.18);
+        }
+        .lb-item.pay-row {
+          background: rgba(239, 68, 68, 0.06);
+          border-color: rgba(239, 68, 68, 0.18);
+        }
+
         .lb-rank {
           width: 32px;
           text-align: center;
           flex-shrink: 0;
         }
-        .lb-medal {
-          font-size: 1.1rem;
-        }
+        .lb-medal { font-size: 1.1rem; }
         .lb-rank-num {
           font-weight: 700;
           color: var(--text-dim);
@@ -299,6 +347,12 @@ export default function Leaderboard() {
           gap: 0.35rem;
           min-width: 0;
         }
+        .lb-name-row {
+          display: flex;
+          align-items: center;
+          gap: 0.45rem;
+          flex-wrap: wrap;
+        }
         .lb-name {
           font-weight: 600;
           font-size: 0.9rem;
@@ -315,6 +369,27 @@ export default function Leaderboard() {
           border-radius: 4px;
           text-transform: uppercase;
         }
+
+        /* Prize badges */
+        .prize-badge {
+          font-size: 0.62rem;
+          font-weight: 700;
+          padding: 2px 7px;
+          border-radius: 20px;
+          white-space: nowrap;
+          letter-spacing: 0.02em;
+        }
+        .prize-earn {
+          background: rgba(0, 200, 83, 0.15);
+          color: #4ade80;
+          border: 1px solid rgba(0, 200, 83, 0.25);
+        }
+        .prize-pay {
+          background: rgba(239, 68, 68, 0.12);
+          color: #fca5a5;
+          border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
         .lb-bar-wrap {
           height: 4px;
           background: rgba(255,255,255,0.05);
@@ -344,13 +419,22 @@ export default function Leaderboard() {
           margin-left: 2px;
         }
 
+        /* Prize footer */
+        .prize-footer {
+          margin-top: 1rem;
+          padding: 0.75rem 1rem;
+          background: rgba(251, 191, 36, 0.05);
+          border: 1px solid rgba(251, 191, 36, 0.15);
+          border-radius: 10px;
+          font-size: 0.78rem;
+          color: var(--text-muted);
+          line-height: 1.5;
+        }
+
         /* Image Modal */
         .image-modal {
           position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
+          top: 0; left: 0; right: 0; bottom: 0;
           background: rgba(0, 0, 0, 0.9);
           z-index: 2000;
           display: flex;

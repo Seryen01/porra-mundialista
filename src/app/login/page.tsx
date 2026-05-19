@@ -11,7 +11,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const [countdown, setCountdown] = useState<{ days: number; hours: number; minutes: number } | null>(null);
+  const [countdown, setCountdown] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
   const [started, setStarted] = useState(false);
 
   useEffect(() => {
@@ -23,10 +23,11 @@ export default function LoginPage() {
         days: Math.floor(diff / 86400000),
         hours: Math.floor((diff % 86400000) / 3600000),
         minutes: Math.floor((diff % 3600000) / 60000),
+        seconds: Math.floor((diff % 60000) / 1000),
       });
     }
     tick();
-    const id = setInterval(tick, 60000);
+    const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, []);
 
@@ -83,6 +84,11 @@ export default function LoginPage() {
                   <div className="cd-unit">
                     <span className="cd-num">{String(countdown!.minutes).padStart(2, "0")}</span>
                     <span className="cd-txt">min</span>
+                  </div>
+                  <span className="cd-sep">:</span>
+                  <div className="cd-unit">
+                    <span className="cd-num">{String(countdown!.seconds).padStart(2, "0")}</span>
+                    <span className="cd-txt">seg</span>
                   </div>
                 </div>
               </>

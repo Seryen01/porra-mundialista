@@ -760,6 +760,7 @@ function BonusSection() {
   const [mvp, setMvp] = useState("");
   const [saving, setSaving] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
     fetchBonus();
@@ -777,6 +778,7 @@ function BonusSection() {
         setChampion(data.champion || "");
         setSpainResult(data.spainResult || "");
         setMvp(data.mvp || "");
+        setCollapsed(true);
       }
     }
     setLoading(false);
@@ -790,80 +792,131 @@ function BonusSection() {
       body: JSON.stringify({ topScorer, champion, spainResult, mvp }),
     });
     setSaving(false);
-    fetchBonus();
-    alert("Bonus guardado correctamente!");
+    await fetchBonus();
+    setCollapsed(true);
   };
 
   if (loading) return null;
 
+  const hasPredictions = topScorer || champion || spainResult || mvp;
+
   return (
     <div className="bonus-section card animate-in stagger-2">
-      <div className="bonus-header">
+      {/* Header — always visible */}
+      <div className="bonus-header" onClick={() => setCollapsed(c => !c)} style={{ cursor: "pointer" }}>
         <h2>🏆 Predicciones Bonus</h2>
-        {isLocked && <span className="locked-badge"><Lock size={12} /> Bloqueado</span>}
+        <div className="bonus-header-right">
+          {isLocked && <span className="locked-badge"><Lock size={12} /> Bloqueado</span>}
+          {collapsed ? <ChevronDown size={16} className="chevron" /> : <ChevronUp size={16} className="chevron" />}
+        </div>
       </div>
-      <p className="bonus-desc">Predice los resultados finales del Mundial. Solo puedes editar esto antes del inicio del torneo.</p>
-      
-      <form onSubmit={handleSave} className="bonus-form">
-        <div className="bf-group">
-          <label>Máximo Goleador</label>
-          <input 
-            type="text" 
-            placeholder="Ej. Mbappé" 
-            value={topScorer} 
-            onChange={e => setTopScorer(e.target.value)} 
-            disabled={isLocked || saving} 
-          />
-        </div>
-        <div className="bf-group">
-          <label>Campeón del Mundial</label>
-          <input 
-            type="text" 
-            placeholder="Ej. Brasil" 
-            value={champion} 
-            onChange={e => setChampion(e.target.value)} 
-            disabled={isLocked || saving} 
-          />
-        </div>
-        <div className="bf-group">
-          <label>Resultado de España</label>
-          <select 
-            value={spainResult} 
-            onChange={e => setSpainResult(e.target.value)} 
-            disabled={isLocked || saving}
-          >
-            <option value="">Selecciona...</option>
-            <option value="Fase de grupos">Fase de grupos</option>
-            <option value="Dieciseisavos de final">Dieciseisavos de final</option>
-            <option value="Octavos de final">Octavos de final</option>
-            <option value="Cuartos de final">Cuartos de final</option>
-            <option value="Semifinales">Semifinales</option>
-            <option value="Final">Final</option>
-            <option value="Campeón">Campeón</option>
-          </select>
-        </div>
-        <div className="bf-group">
-          <label>MVP del Mundial</label>
-          <input
-            type="text"
-            placeholder="Ej. Vinicius Jr."
-            value={mvp}
-            onChange={e => setMvp(e.target.value)}
-            disabled={isLocked || saving}
-          />
-        </div>
 
-        {!isLocked && (
-          <button type="submit" className="bf-btn" disabled={saving}>
-            {saving ? "Guardando..." : "Guardar Bonus"}
-          </button>
-        )}
-        {bonus?.points > 0 && (
-          <div className="bonus-points">
-            Puntos obtenidos: <strong>+{bonus.points} pts</strong>
+      {/* Collapsed summary */}
+      {collapsed && (
+        <div className="bonus-summary">
+          <div className="bs-pills">
+            <div className="bs-pill">
+              <span className="bs-label">Goleador</span>
+              <span className="bs-val">{topScorer || <em>—</em>}</span>
+            </div>
+            <div className="bs-pill">
+              <span className="bs-label">Campeón</span>
+              <span className="bs-val">{champion || <em>—</em>}</span>
+            </div>
+            <div className="bs-pill">
+              <span className="bs-label">España</span>
+              <span className="bs-val">{spainResult || <em>—</em>}</span>
+            </div>
+            <div className="bs-pill">
+              <span className="bs-label">MVP</span>
+              <span className="bs-val">{mvp || <em>—</em>}</span>
+            </div>
           </div>
-        )}
-      </form>
+          {bonus?.points > 0 && (
+            <div className="bonus-points">
+              Puntos obtenidos: <strong>+{bonus.points} pts</strong>
+            </div>
+          )}
+          {!isLocked && (
+            <button className="bf-edit-btn" onClick={() => setCollapsed(false)}>
+              <Pencil size={13} /> Editar
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Expanded form */}
+      {!collapsed && (
+        <>
+          <p className="bonus-desc">Predice los resultados finales del Mundial. Solo puedes editar esto antes del inicio del torneo.</p>
+          <form onSubmit={handleSave} className="bonus-form">
+            <div className="bf-group">
+              <label>Máximo Goleador</label>
+              <input
+                type="text"
+                placeholder="Ej. Mbappé"
+                value={topScorer}
+                onChange={e => setTopScorer(e.target.value)}
+                disabled={isLocked || saving}
+              />
+            </div>
+            <div className="bf-group">
+              <label>Campeón del Mundial</label>
+              <input
+                type="text"
+                placeholder="Ej. Brasil"
+                value={champion}
+                onChange={e => setChampion(e.target.value)}
+                disabled={isLocked || saving}
+              />
+            </div>
+            <div className="bf-group">
+              <label>Resultado de España</label>
+              <select
+                value={spainResult}
+                onChange={e => setSpainResult(e.target.value)}
+                disabled={isLocked || saving}
+              >
+                <option value="">Selecciona...</option>
+                <option value="Fase de grupos">Fase de grupos</option>
+                <option value="Dieciseisavos de final">Dieciseisavos de final</option>
+                <option value="Octavos de final">Octavos de final</option>
+                <option value="Cuartos de final">Cuartos de final</option>
+                <option value="Semifinales">Semifinales</option>
+                <option value="Final">Final</option>
+                <option value="Campeón">Campeón</option>
+              </select>
+            </div>
+            <div className="bf-group">
+              <label>MVP del Mundial</label>
+              <input
+                type="text"
+                placeholder="Ej. Vinicius Jr."
+                value={mvp}
+                onChange={e => setMvp(e.target.value)}
+                disabled={isLocked || saving}
+              />
+            </div>
+
+            <div className="bf-actions">
+              {hasPredictions && (
+                <button type="button" className="bf-cancel-btn" onClick={() => setCollapsed(true)}>
+                  Cancelar
+                </button>
+              )}
+              <button type="submit" className="bf-btn" disabled={saving}>
+                {saving ? "Guardando..." : "Guardar Bonus"}
+              </button>
+            </div>
+
+            {bonus?.points > 0 && (
+              <div className="bonus-points">
+                Puntos obtenidos: <strong>+{bonus.points} pts</strong>
+              </div>
+            )}
+          </form>
+        </>
+      )}
 
       <style jsx>{`
         .bonus-section {
@@ -875,7 +928,7 @@ function BonusSection() {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 0.5rem;
+          margin-bottom: 0;
         }
         .bonus-header h2 {
           font-size: 1.1rem;
@@ -884,6 +937,14 @@ function BonusSection() {
           display: flex;
           align-items: center;
           gap: 0.4rem;
+        }
+        .bonus-header-right {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        :global(.chevron) {
+          color: var(--text-dim);
         }
         .locked-badge {
           display: flex;
@@ -898,8 +959,71 @@ function BonusSection() {
         .bonus-desc {
           font-size: 0.75rem;
           color: var(--text-dim);
+          margin-top: 0.6rem;
           margin-bottom: 1rem;
         }
+
+        /* Collapsed summary */
+        .bonus-summary {
+          margin-top: 0.75rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.6rem;
+        }
+        .bs-pills {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 0.4rem;
+        }
+        .bs-pill {
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 8px;
+          padding: 0.45rem 0.65rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.15rem;
+        }
+        .bs-label {
+          font-size: 0.6rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          color: var(--text-dim);
+        }
+        .bs-val {
+          font-size: 0.82rem;
+          font-weight: 600;
+          color: var(--text-primary);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .bs-val em {
+          color: var(--text-dim);
+          font-style: normal;
+        }
+        .bf-edit-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.35rem;
+          width: 100%;
+          padding: 0.5rem;
+          border-radius: var(--radius-sm);
+          border: 1px solid rgba(251,191,36,0.3);
+          background: rgba(251,191,36,0.07);
+          color: var(--gold);
+          font-size: 0.8rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+        .bf-edit-btn:hover {
+          background: rgba(251,191,36,0.14);
+        }
+
+        /* Expanded form */
         .bonus-form {
           display: flex;
           flex-direction: column;
@@ -931,8 +1055,13 @@ function BonusSection() {
           opacity: 0.6;
           cursor: not-allowed;
         }
+        .bf-actions {
+          display: flex;
+          gap: 0.5rem;
+          margin-top: 0.25rem;
+        }
         .bf-btn {
-          margin-top: 0.5rem;
+          flex: 1;
           background: linear-gradient(135deg, var(--gold), #f59e0b);
           color: #000;
           font-weight: 700;
@@ -944,8 +1073,20 @@ function BonusSection() {
         .bf-btn:disabled {
           opacity: 0.5;
         }
+        .bf-cancel-btn {
+          padding: 0.7rem 1rem;
+          border-radius: var(--radius-sm);
+          border: 1px solid var(--border);
+          background: transparent;
+          color: var(--text-muted);
+          font-size: 0.85rem;
+          font-weight: 600;
+          cursor: pointer;
+        }
+        .bf-cancel-btn:hover {
+          background: rgba(255,255,255,0.05);
+        }
         .bonus-points {
-          margin-top: 0.5rem;
           background: rgba(251, 191, 36, 0.15);
           color: var(--gold);
           padding: 0.5rem;

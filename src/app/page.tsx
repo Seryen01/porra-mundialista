@@ -143,14 +143,15 @@ export default function Dashboard() {
             : hasGroups
             ? "Fase de Grupos"
             : uniquePhases.join(" & ");
+          const hasStarMatch = dateMatches.some(m => m.isStarMatch);
           return (
             <div key={date} className="date-group animate-in" style={{ animationDelay: `${0.1 + groupIndex * 0.05}s` }}>
-              <div 
-                className="date-header" 
-                onClick={() => toggleDate(date)} 
+              <div
+                className="date-header"
+                onClick={() => toggleDate(date)}
                 style={{ cursor: 'pointer', userSelect: 'none' }}
               >
-                <div className="date-dot" />
+                <div className={`date-dot${hasStarMatch ? ' star-dot' : ''}`} />
                 <div className="date-title-wrap">
                   <span className="phase-pill">{phase}</span>
                   <h2 className="date-title">{date}</h2>
@@ -311,6 +312,10 @@ export default function Dashboard() {
           background: var(--green);
           flex-shrink: 0;
         }
+        .date-dot.star-dot {
+          background: var(--gold);
+          box-shadow: 0 0 6px rgba(251, 191, 36, 0.5);
+        }
         .date-title-wrap {
           display: flex;
           flex-direction: column;
@@ -404,7 +409,7 @@ function MatchCard({ match, onUpdate }: { match: Match; onUpdate: () => void }) 
   const inputsDisabled = isLocked || saving || (!isEditing && hasPrediction && !hasChanges);
 
   return (
-    <div className={`match-card card ${isLocked ? 'is-locked' : ''} ${hasPrediction && !isEditing && !hasChanges ? 'is-saved' : ''}`}>
+    <div className={`match-card card ${isLocked ? 'is-locked' : ''} ${hasPrediction && !isEditing && !hasChanges ? 'is-saved' : ''} ${match.isStarMatch ? 'is-star' : ''}`}>
       {/* Top bar: phase + time */}
       <div className="mc-top">
         <span className="mc-phase">{match.phase}</span>
@@ -427,28 +432,31 @@ function MatchCard({ match, onUpdate }: { match: Match; onUpdate: () => void }) 
         </div>
 
         {/* Score inputs */}
-        <div className="mc-score-area">
-          <input
-            type="number"
-            min="0"
-            max="99"
-            value={scoreA}
-            onChange={(e) => setScoreA(e.target.value)}
-            disabled={inputsDisabled}
-            placeholder="–"
-            className={`mc-input ${hasPrediction && !isEditing ? 'filled' : ''}`}
-          />
-          <span className="mc-vs">:</span>
-          <input
-            type="number"
-            min="0"
-            max="99"
-            value={scoreB}
-            onChange={(e) => setScoreB(e.target.value)}
-            disabled={inputsDisabled}
-            placeholder="–"
-            className={`mc-input ${hasPrediction && !isEditing ? 'filled' : ''}`}
-          />
+        <div className="mc-score-wrap">
+          <div className="mc-score-area">
+            <input
+              type="number"
+              min="0"
+              max="99"
+              value={scoreA}
+              onChange={(e) => setScoreA(e.target.value)}
+              disabled={inputsDisabled}
+              placeholder="–"
+              className={`mc-input ${hasPrediction && !isEditing ? 'filled' : ''} ${match.isStarMatch ? 'star-input' : ''}`}
+            />
+            <span className="mc-vs">:</span>
+            <input
+              type="number"
+              min="0"
+              max="99"
+              value={scoreB}
+              onChange={(e) => setScoreB(e.target.value)}
+              disabled={inputsDisabled}
+              placeholder="–"
+              className={`mc-input ${hasPrediction && !isEditing ? 'filled' : ''} ${match.isStarMatch ? 'star-input' : ''}`}
+            />
+          </div>
+          {match.isStarMatch && <span className="mc-x2">⭐ ×2 puntos</span>}
         </div>
 
         <div className="mc-team mc-team-right">
@@ -521,6 +529,10 @@ function MatchCard({ match, onUpdate }: { match: Match; onUpdate: () => void }) 
         .match-card.is-locked {
           opacity: 0.85;
         }
+        .match-card.is-star {
+          border-color: rgba(251, 191, 36, 0.45);
+          box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.12), 0 4px 24px rgba(251, 191, 36, 0.12);
+        }
 
         .mc-top {
           display: flex;
@@ -529,6 +541,10 @@ function MatchCard({ match, onUpdate }: { match: Match; onUpdate: () => void }) 
           padding: 0.6rem 1rem;
           background: rgba(0, 0, 0, 0.2);
           border-bottom: 1px solid var(--border);
+        }
+        .match-card.is-star .mc-top {
+          background: linear-gradient(90deg, rgba(251, 191, 36, 0.12), rgba(0, 0, 0, 0.15));
+          border-bottom-color: rgba(251, 191, 36, 0.25);
         }
         .mc-phase {
           font-size: 0.65rem;
@@ -543,14 +559,15 @@ function MatchCard({ match, onUpdate }: { match: Match; onUpdate: () => void }) 
           gap: 0.5rem;
         }
         .star-badge {
-          background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(251, 191, 36, 0.1));
+          background: linear-gradient(135deg, rgba(251, 191, 36, 0.25), rgba(251, 191, 36, 0.12));
           color: var(--gold);
-          font-size: 0.6rem;
+          font-size: 0.65rem;
           font-weight: 800;
-          padding: 2px 6px;
-          border-radius: 4px;
-          border: 1px solid rgba(251, 191, 36, 0.3);
+          padding: 3px 8px;
+          border-radius: 5px;
+          border: 1px solid rgba(251, 191, 36, 0.4);
           text-transform: uppercase;
+          letter-spacing: 0.04em;
         }
         .mc-time {
           font-size: 0.7rem;
@@ -609,11 +626,28 @@ function MatchCard({ match, onUpdate }: { match: Match; onUpdate: () => void }) 
           letter-spacing: 0.05em;
         }
 
+        .mc-score-wrap {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.25rem;
+          flex-shrink: 0;
+        }
         .mc-score-area {
           display: flex;
           align-items: center;
           gap: 0.4rem;
-          flex-shrink: 0;
+        }
+        .mc-x2 {
+          font-size: 0.6rem;
+          font-weight: 800;
+          color: var(--gold);
+          background: rgba(251, 191, 36, 0.15);
+          border: 1px solid rgba(251, 191, 36, 0.3);
+          padding: 1px 7px;
+          border-radius: 20px;
+          letter-spacing: 0.04em;
+          white-space: nowrap;
         }
         .mc-input {
           width: 42px;
@@ -645,6 +679,15 @@ function MatchCard({ match, onUpdate }: { match: Match; onUpdate: () => void }) 
           background: var(--green-glow);
           border-color: rgba(0, 200, 83, 0.3);
           color: var(--green);
+        }
+        .mc-input.star-input:focus {
+          border-color: var(--gold);
+          box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.15);
+        }
+        .mc-input.star-input.filled {
+          background: rgba(251, 191, 36, 0.08);
+          border-color: rgba(251, 191, 36, 0.35);
+          color: var(--gold);
         }
         .mc-vs {
           color: var(--text-dim);

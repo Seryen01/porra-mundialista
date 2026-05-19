@@ -24,14 +24,14 @@ const avatarColors = [
 ];
 
 const EARN_PRIZES = [
-  { emoji: "🏆", label: "Cobra 50€" },
-  { emoji: "🥈", label: "Cobra 35€" },
-  { emoji: "🥉", label: "Cobra 20€" },
+  { emoji: "🏆", label: "Cobra 35€" },
+  { emoji: "🥈", label: "Cobra 20€" },
+  { emoji: "🥉", label: "Cobra 10€" },
 ];
 const PAY_PRIZES = [
-  { emoji: "💸", label: "Paga 50€" },
   { emoji: "💸", label: "Paga 35€" },
   { emoji: "💸", label: "Paga 20€" },
+  { emoji: "💸", label: "Paga 10€" },
 ];
 
 function getPrizeBadge(index: number, total: number) {
@@ -181,7 +181,7 @@ export default function Leaderboard() {
       {/* Prize explanation — only when porra is finished */}
       {allFinished && (
         <p className="prize-footer animate-in stagger-3">
-          🍽️ <strong>Premios de la porra:</strong> el último paga la cena al primero (máx. 50 €), el penúltimo al segundo (máx. 35 €) y el antepenúltimo al tercero (máx. 20 €).
+          🍽️ <strong>Premios de la porra:</strong> el último paga la cena al primero (máx. 35 €), el penúltimo al segundo (máx. 20 €) y el antepenúltimo al tercero (máx. 10 €).
         </p>
       )}
 

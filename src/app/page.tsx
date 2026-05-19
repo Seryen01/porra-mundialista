@@ -64,14 +64,22 @@ export default function Dashboard() {
     );
   }
 
-  const groupedMatches = matches.reduce((acc: Record<string, Match[]>, match) => {
+  const allGroupedMatches = matches.reduce((acc: Record<string, Match[]>, match) => {
     const dateKey = format(new Date(match.date), "EEEE d 'de' MMMM", { locale: es });
     if (!acc[dateKey]) acc[dateKey] = [];
     acc[dateKey].push(match);
     return acc;
   }, {});
 
-  const totalPredictions = matches.filter(m => m.predictions.length > 0).length;
+  // Only show days that have at least one non-finished match
+  const groupedMatches = Object.fromEntries(
+    Object.entries(allGroupedMatches).filter(([, dayMatches]) =>
+      dayMatches.some(m => m.status !== "FINISHED")
+    )
+  );
+
+  const pendingMatches = Object.values(groupedMatches).flat();
+  const totalPredictions = pendingMatches.filter(m => m.predictions.length > 0).length;
 
   return (
     <div className="dashboard">
@@ -79,7 +87,7 @@ export default function Dashboard() {
       <header className="dash-header animate-in">
         <div className="header-left">
           <h1>⚽ Partidos</h1>
-          <span className="match-count">{matches.length} partidos</span>
+          <span className="match-count">{pendingMatches.length} partidos pendientes</span>
         </div>
         <div className="header-right">
           <div className="user-chip">
@@ -96,7 +104,7 @@ export default function Dashboard() {
             </div>
             <div className="user-info" onClick={() => router.push('/profile')} style={{ cursor: 'pointer' }}>
               <span className="user-name">{session?.user?.name}</span>
-              <span className="user-stat">{totalPredictions}/{matches.length} apostados</span>
+              <span className="user-stat">{totalPredictions}/{pendingMatches.length} apostados</span>
             </div>
           </div>
         </div>
@@ -114,7 +122,7 @@ export default function Dashboard() {
 
       {/* Progress bar */}
       <div className="progress-bar animate-in stagger-1">
-        <div className="progress-fill" style={{ width: `${(totalPredictions / Math.max(matches.length, 1)) * 100}%` }} />
+        <div className="progress-fill" style={{ width: `${(totalPredictions / Math.max(pendingMatches.length, 1)) * 100}%` }} />
       </div>
 
       <BonusSection />

@@ -11,6 +11,25 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  const [countdown, setCountdown] = useState<{ days: number; hours: number; minutes: number } | null>(null);
+  const [started, setStarted] = useState(false);
+
+  useEffect(() => {
+    const TARGET = new Date("2026-06-11T19:00:00Z").getTime();
+    function tick() {
+      const diff = TARGET - Date.now();
+      if (diff <= 0) { setStarted(true); setCountdown(null); return; }
+      setCountdown({
+        days: Math.floor(diff / 86400000),
+        hours: Math.floor((diff % 86400000) / 3600000),
+        minutes: Math.floor((diff % 3600000) / 60000),
+      });
+    }
+    tick();
+    const id = setInterval(tick, 60000);
+    return () => clearInterval(id);
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -41,6 +60,35 @@ export default function LoginPage() {
           <div className="year-badge">FIFA 2026</div>
           <p className="subtitle">USA · México · Canadá</p>
         </div>
+
+        {/* Countdown */}
+        {(countdown || started) && (
+          <div className="countdown animate-in stagger-1">
+            {started ? (
+              <p className="cd-started">¡El Mundial ha comenzado! 🎉</p>
+            ) : (
+              <>
+                <p className="cd-label">⚽ El Mundial comienza en</p>
+                <div className="cd-units">
+                  <div className="cd-unit">
+                    <span className="cd-num">{String(countdown!.days).padStart(2, "0")}</span>
+                    <span className="cd-txt">días</span>
+                  </div>
+                  <span className="cd-sep">:</span>
+                  <div className="cd-unit">
+                    <span className="cd-num">{String(countdown!.hours).padStart(2, "0")}</span>
+                    <span className="cd-txt">horas</span>
+                  </div>
+                  <span className="cd-sep">:</span>
+                  <div className="cd-unit">
+                    <span className="cd-num">{String(countdown!.minutes).padStart(2, "0")}</span>
+                    <span className="cd-txt">min</span>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="login-form card">
@@ -166,6 +214,64 @@ export default function LoginPage() {
           font-size: 0.85rem;
           font-weight: 400;
           margin-top: 0.25rem;
+        }
+
+        .countdown {
+          text-align: center;
+          width: 100%;
+        }
+        .cd-label {
+          font-size: 0.65rem;
+          text-transform: uppercase;
+          letter-spacing: 0.12em;
+          color: var(--text-dim);
+          margin-bottom: 0.75rem;
+          font-weight: 700;
+        }
+        .cd-units {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+        }
+        .cd-unit {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 10px;
+          padding: 0.75rem 1.1rem;
+          min-width: 72px;
+        }
+        .cd-num {
+          font-size: 2rem;
+          font-weight: 800;
+          letter-spacing: -0.03em;
+          background: linear-gradient(135deg, #ffffff 0%, var(--gold) 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          line-height: 1;
+        }
+        .cd-txt {
+          font-size: 0.58rem;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          color: var(--text-dim);
+          margin-top: 0.35rem;
+          font-weight: 700;
+        }
+        .cd-sep {
+          font-size: 1.4rem;
+          font-weight: 800;
+          color: rgba(255, 255, 255, 0.2);
+          margin-bottom: 1.1rem;
+        }
+        .cd-started {
+          font-size: 1rem;
+          font-weight: 700;
+          color: var(--gold);
         }
 
         .login-form {

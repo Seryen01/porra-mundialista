@@ -432,8 +432,16 @@ function AdminMatchCard({ match, onUpdate, onDelete }: { match: any; onUpdate: (
         <img src={getFlagUrl(match.teamB)} alt={match.teamB} className="ac-flag-img" />
       </div>
       <div className="ac-actions">
-        <button className="ac-btn live" onClick={() => onUpdate(match.id, { scoreA: sA, scoreB: sB, status: "LIVE" })}>
-          <Zap size={13} /> LIVE
+        <button
+          className={`ac-btn live ${match.status === "LIVE" ? "live-on" : ""}`}
+          onClick={() => onUpdate(match.id, match.status === "LIVE"
+            ? { status: "UPCOMING" }
+            : { scoreA: sA, scoreB: sB, status: "LIVE" }
+          )}
+          title={match.status === "LIVE" ? "Cancelar LIVE y volver a Próximo" : "Marcar como en juego"}
+        >
+          <Zap size={13} />
+          {match.status === "LIVE" ? "Cancelar LIVE" : "LIVE"}
         </button>
         <button className="ac-btn finish" onClick={() => onUpdate(match.id, { scoreA: sA, scoreB: sB, status: "FINISHED" })}>
           <Check size={13} /> Finalizar
@@ -519,6 +527,17 @@ function AdminMatchCard({ match, onUpdate, onDelete }: { match: any; onUpdate: (
           background: rgba(251, 191, 36, 0.1);
           color: #fbbf24;
           border: 1px solid rgba(251, 191, 36, 0.2);
+        }
+        .ac-btn.live.live-on {
+          background: rgba(251, 191, 36, 0.22);
+          color: #fbbf24;
+          border: 1px solid rgba(251, 191, 36, 0.5);
+          box-shadow: 0 0 8px rgba(251, 191, 36, 0.2);
+          animation: pulse-live 1.8s ease-in-out infinite;
+        }
+        @keyframes pulse-live {
+          0%, 100% { box-shadow: 0 0 6px rgba(251,191,36,0.2); }
+          50%       { box-shadow: 0 0 14px rgba(251,191,36,0.45); }
         }
         .ac-btn.finish {
           background: var(--green-glow);

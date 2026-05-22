@@ -8,11 +8,57 @@ import { prisma } from "@/lib/prisma";
 import { calculatePoints } from "@/lib/scoring";
 import {
   getWC2026Matches,
+  getKnockoutMatchesWithTeams,
   normalizeTeamName,
   findMatchInList,
   isMatchReversed,
 } from "@/lib/wc2026";
 import { cacheDelete } from "@/lib/cache";
+
+// Fases eliminatorias tal como están en la BD
+const KNOCKOUT_PHASES = ["Dieciseisavos", "Octavos", "Cuartos", "Semis", "Final"];
+
+/** Sincroniza los equipos de los partidos eliminatorios cuando la API los revela */
+async function syncKnockoutTeams(): Promise<number> {
+  try {
+    const apiKnockouts = await getKnockoutMatchesWithTeams();
+    if (apiKnockouts.length === 0) return 0; // Aún sin cruces definidos
+
+    const dbKnockouts = await prisma.match.findMany({
+      where: { phase: { in: KNOCKOUT_PHASES }, matchNumber: { not: null } },
+    });
+    if (dbKnockouts.length === 0) return 0;
+
+    let updated = 0;
+    for (const apiMatch of apiKnockouts) {
+      const dbMatch = dbKnockouts.find((m) => m.matchNumber === apiMatch.match_number);
+      if (!dbMatch) continue;
+
+      const homeTeamEs = normalizeTeamName(apiMatch.home_team);
+      const awayTeamEs = normalizeTeamName(apiMatch.away_team);
+      if (!homeTeamEs || !awayTeamEs) continue;
+
+      // Idempotente: saltar si ya tiene los equipos correctos (en cualquier orden)
+      if (
+        (dbMatch.teamA === homeTeamEs && dbMatch.teamB === awayTeamEs) ||
+        (dbMatch.teamA === awayTeamEs && dbMatch.teamB === homeTeamEs)
+      )
+        continue;
+
+      await prisma.match.update({
+        where: { id: dbMatch.id },
+        data: { teamA: homeTeamEs, teamB: awayTeamEs },
+      });
+      console.log(`[cron-knockout] ✓ #${apiMatch.match_number}: ${homeTeamEs} vs ${awayTeamEs}`);
+      updated++;
+    }
+    return updated;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[cron-knockout] Error:", msg);
+    return 0;
+  }
+}
 
 export async function GET(req: Request) {
   // Protección en producción: requiere CRON_SECRET si está configurado
@@ -28,6 +74,7 @@ export async function GET(req: Request) {
   const now = new Date();
   let changedCount = 0;
   let syncedFromApi = false;
+  let knockoutTeamsUpdated = 0;
   const logs: string[] = [];
 
   // ═══════════════════════════════════════════════════════
@@ -97,6 +144,13 @@ export async function GET(req: Request) {
         }
       }
 
+      // Sincronizar equipos de fases eliminatorias cuando la API los revele
+      knockoutTeamsUpdated = await syncKnockoutTeams();
+      if (knockoutTeamsUpdated > 0) {
+        logs.push(`[knockout] ${knockoutTeamsUpdated} partido(s) con equipos actualizados`);
+        changedCount += knockoutTeamsUpdated;
+      }
+
       syncedFromApi = true;
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
@@ -142,6 +196,7 @@ export async function GET(req: Request) {
     success: true,
     changedCount,
     syncedFromApi,
+    knockoutTeamsUpdated,
     logs,
     timestamp: now.toISOString(),
   });

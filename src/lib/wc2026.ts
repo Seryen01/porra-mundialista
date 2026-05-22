@@ -216,6 +216,41 @@ export async function getWC2026Matches(): Promise<WC2026Match[]> {
   return matches;
 }
 
+/**
+ * Devuelve los partidos de fase eliminatoria que la API ya tiene con equipos reales definidos.
+ * Útil para actualizar teamA/teamB en la BD cuando los cruces se conocen (a partir del 26 junio).
+ * Caché de 5 minutos — los cruces no cambian con frecuencia.
+ */
+export async function getKnockoutMatchesWithTeams(): Promise<WC2026Match[]> {
+  const CACHE_KEY = "knockout_with_teams";
+  const cached = cacheGet<WC2026Match[]>(CACHE_KEY);
+  if (cached) return cached;
+
+  const all = await getWC2026Matches();
+
+  // Rondas eliminatorias — incluir todos los valores que la API puede usar
+  const knockoutRounds = new Set([
+    "round_of_32",
+    "round_of_16",
+    "quarter_final",
+    "semi_final",
+    "third_place",
+    "3rd_place",
+    "final",
+  ]);
+
+  const result = all.filter((m) => {
+    if (!knockoutRounds.has(m.round)) return false;
+    // Solo los que ya tienen equipos reales (no TBD ni vacíos)
+    const hasHome = m.home_team && m.home_team !== "TBD" && m.home_team !== "";
+    const hasAway = m.away_team && m.away_team !== "TBD" && m.away_team !== "";
+    return hasHome && hasAway;
+  });
+
+  cacheSet(CACHE_KEY, result, 300); // 5 min — los cruces no cambian rápido
+  return result;
+}
+
 /** Devuelve solo los partidos en curso o recién terminados (últimas 3h). */
 export async function getLiveAndRecentMatches(): Promise<WC2026Match[]> {
   const all = await getWC2026Matches();

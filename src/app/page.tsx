@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { getFlagUrl, getCode } from "@/lib/flags";
 import { Lock, Check, Pencil, ChevronDown, ChevronUp } from "lucide-react";
+import { useLiveScores, type LiveMatch } from "@/hooks/useLiveScores";
 
 interface Match {
   id: string;
@@ -30,6 +31,15 @@ export default function Dashboard() {
   const [showModal, setShowModal] = useState(false);
   const [expandedDates, setExpandedDates] = useState<Record<string, boolean>>({});
 
+  const fetchMatches = async () => {
+    const res = await fetch("/api/matches");
+    const data = await res.json();
+    setMatches(data);
+    setLoading(false);
+  };
+
+  const { getLiveDataForMatch, hasLive } = useLiveScores(fetchMatches);
+
   const toggleDate = (date: string) => {
     setExpandedDates(prev => ({
       ...prev,
@@ -47,13 +57,6 @@ export default function Dashboard() {
         .then(data => setUserData(data));
     }
   }, [status]);
-
-  const fetchMatches = async () => {
-    const res = await fetch("/api/matches");
-    const data = await res.json();
-    setMatches(data);
-    setLoading(false);
-  };
 
   if (loading) {
     return (
@@ -164,7 +167,7 @@ export default function Dashboard() {
               {expandedDates[date] && (
                 <div className="matches-list animate-in">
                   {dateMatches.map((match) => (
-                    <MatchCard key={match.id} match={match} onUpdate={fetchMatches} />
+                    <MatchCard key={match.id} match={match} onUpdate={fetchMatches} liveData={getLiveDataForMatch(match.teamA, match.teamB)} />
                   ))}
                 </div>
               )}
@@ -371,7 +374,7 @@ export default function Dashboard() {
   );
 }
 
-function MatchCard({ match, onUpdate }: { match: Match; onUpdate: () => void }) {
+function MatchCard({ match, onUpdate, liveData }: { match: Match; onUpdate: () => void; liveData?: LiveMatch | null }) {
   const prediction = match.predictions[0];
   const [scoreA, setScoreA] = useState(prediction?.predictedScoreA ?? "");
   const [scoreB, setScoreB] = useState(prediction?.predictedScoreB ?? "");
@@ -381,6 +384,7 @@ function MatchCard({ match, onUpdate }: { match: Match; onUpdate: () => void }) 
 
   const isLocked = match.status !== "UPCOMING" || new Date(match.date) < new Date();
   const hasPrediction = !!prediction;
+  const isActuallyLive = liveData?.status === "live" || match.status === "LIVE";
 
   const handleSave = async () => {
     if (scoreA === "" || scoreB === "") return;
@@ -416,6 +420,15 @@ function MatchCard({ match, onUpdate }: { match: Match; onUpdate: () => void }) 
         <div className="mc-top-right">
           {match.isStarMatch && (
             <span className="star-badge" title="Puntos dobles en este partido">⭐ Partido Estrella</span>
+          )}
+          {isActuallyLive && (
+            <span className="live-badge">
+              <span className="live-dot" />
+              EN DIRECTO
+              {liveData?.homeScore !== null && liveData?.homeScore !== undefined
+                ? ` · ${liveData.homeScore}-${liveData.awayScore}`
+                : ""}
+            </span>
           )}
           <span className="mc-time">{format(new Date(match.date), "HH:mm")}</span>
         </div>
@@ -510,6 +523,21 @@ function MatchCard({ match, onUpdate }: { match: Match; onUpdate: () => void }) 
                 Resultado pendiente de validación
                 {hasPrediction && ` · Tu apuesta: ${prediction.predictedScoreA} – ${prediction.predictedScoreB}`}
               </span>
+            </div>
+          ) : isActuallyLive && liveData ? (
+            <div className="mc-live-bar">
+              <div className="mc-live-score">
+                <span className="live-dot-sm" />
+                <strong>
+                  {liveData.homeScore ?? "–"} – {liveData.awayScore ?? "–"}
+                </strong>
+                <span className="mc-live-label">en directo</span>
+              </div>
+              {hasPrediction && (
+                <span className="mc-bet-hint">
+                  Tu apuesta: {prediction.predictedScoreA}–{prediction.predictedScoreB}
+                </span>
+              )}
             </div>
           ) : hasPrediction ? (
             <div className="mc-locked-info">
@@ -799,6 +827,66 @@ function MatchCard({ match, onUpdate }: { match: Match; onUpdate: () => void }) 
         }
         .mc-locked-info.pending {
           color: #fb923c;
+        }
+        /* Live score badge in top bar */
+        .live-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.3rem;
+          background: rgba(239, 68, 68, 0.15);
+          color: #f87171;
+          font-size: 0.6rem;
+          font-weight: 800;
+          padding: 2px 7px;
+          border-radius: 5px;
+          border: 1px solid rgba(239, 68, 68, 0.35);
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+        }
+        .live-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #f87171;
+          animation: blink-live 1s ease-in-out infinite;
+          flex-shrink: 0;
+        }
+        @keyframes blink-live {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+        }
+        /* Live score in locked bar */
+        .mc-live-bar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        .mc-live-score {
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
+          font-size: 0.85rem;
+          color: var(--text-primary);
+        }
+        .live-dot-sm {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #f87171;
+          animation: blink-live 1s ease-in-out infinite;
+          flex-shrink: 0;
+        }
+        .mc-live-label {
+          font-size: 0.65rem;
+          color: #f87171;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .mc-bet-hint {
+          font-size: 0.7rem;
+          color: var(--text-dim);
         }
       `}</style>
     </div>

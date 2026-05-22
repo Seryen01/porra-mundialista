@@ -67,12 +67,14 @@ export default function AdminPage() {
   };
 
   const handleForceAutoFinish = async () => {
-    if (!confirm("Esto ejecutará manualmente el proceso del Scheduler automático para finalizar partidos. ¿Deseas continuar?")) return;
-    
+    if (!confirm("Ejecutará el Scheduler: sincroniza estados con la WC2026 API y calcula puntos de los partidos terminados. ¿Continuar?")) return;
+
     setLoading(true);
     const res = await fetch("/api/cron/auto-finish");
     const data = await res.json();
-    alert(`Proceso completado. Partidos actualizados automáticamente: ${data.changedCount}`);
+    const source = data.syncedFromApi ? "WC2026 API" : "lógica temporal";
+    const detail = data.logs?.slice(0, 5).join("\n") || "Sin cambios";
+    alert(`Scheduler completado (${source}).\nPartidos actualizados: ${data.changedCount}\n\n${detail}`);
     fetchMatches();
   };
 

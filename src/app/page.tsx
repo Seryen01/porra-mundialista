@@ -503,6 +503,14 @@ function MatchCard({ match, onUpdate }: { match: Match; onUpdate: () => void }) 
                 +{prediction?.points || 0} pts
               </div>
             </div>
+          ) : match.status === "PENDING" ? (
+            <div className="mc-locked-info pending">
+              <span>⏳</span>
+              <span>
+                Resultado pendiente de validación
+                {hasPrediction && ` · Tu apuesta: ${prediction.predictedScoreA} – ${prediction.predictedScoreB}`}
+              </span>
+            </div>
           ) : hasPrediction ? (
             <div className="mc-locked-info">
               <Lock size={12} />
@@ -788,6 +796,9 @@ function MatchCard({ match, onUpdate }: { match: Match; onUpdate: () => void }) 
         .mc-locked-info.missed {
           color: var(--text-dim);
           opacity: 0.6;
+        }
+        .mc-locked-info.pending {
+          color: #fb923c;
         }
       `}</style>
     </div>

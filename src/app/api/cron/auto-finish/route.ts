@@ -13,38 +13,29 @@ export async function GET(req: Request) {
   }
   
   const now = new Date();
-  
-  // Encontrar partidos que no estén finalizados y que tengan score válido (para no finalizar partidos sin resultado)
-  // Wait, si no hay resultado, ¿se puede finalizar? "Partidos sin resultado cargado"
-  // "El cambio automático a FINISHED nunca debe: Sobrescribir resultados confirmados manualmente."
+
+  // Only process matches that are still in play (UPCOMING or LIVE)
   const activeMatches = await prisma.match.findMany({
-    where: {
-      status: { not: "FINISHED" }
-    }
+    where: { status: { in: ["UPCOMING", "LIVE"] } },
   });
 
-  let finishedCount = 0;
+  let changedCount = 0;
 
   for (const match of activeMatches) {
     const isGroupStage = match.phase.toLowerCase().includes("grupo");
     const durationMinutes = isGroupStage ? 100 : 150;
-    
     const finishTime = new Date(match.date.getTime() + durationMinutes * 60000);
-    
-    if (now >= finishTime) {
-      // Marcar como finalizado
-      await prisma.match.update({
-        where: { id: match.id },
-        data: { status: "FINISHED" }
-      });
-      
-      // Recalcular puntos
-      if (match.scoreA !== null && match.scoreB !== null) {
-        await calculatePoints(match.id, match.scoreA, match.scoreB);
-      }
-      finishedCount++;
+
+    if (match.status === "UPCOMING" && now >= match.date) {
+      // Auto-LIVE: match has started
+      await prisma.match.update({ where: { id: match.id }, data: { status: "LIVE" } });
+      changedCount++;
+    } else if (match.status === "LIVE" && now >= finishTime) {
+      // Auto-PENDING: match time is up — awaits admin validation before points are calculated
+      await prisma.match.update({ where: { id: match.id }, data: { status: "PENDING" } });
+      changedCount++;
     }
   }
 
-  return NextResponse.json({ success: true, finishedCount });
+  return NextResponse.json({ success: true, changedCount });
 }

@@ -72,7 +72,7 @@ export default function AdminPage() {
     setLoading(true);
     const res = await fetch("/api/cron/auto-finish");
     const data = await res.json();
-    alert(`Proceso completado. Partidos finalizados automáticamente: ${data.finishedCount}`);
+    alert(`Proceso completado. Partidos actualizados automáticamente: ${data.changedCount}`);
     fetchMatches();
   };
 
@@ -413,8 +413,10 @@ function AdminMatchCard({ match, onUpdate, onDelete }: { match: any; onUpdate: (
     );
   }
 
+  const isPending = match.status === "PENDING";
+
   return (
-    <div className="admin-card card">
+    <div className={`admin-card card${isPending ? ' card-pending' : ''}`}>
       <div className="ac-top">
         <span className="ac-phase">{match.phase}</span>
         <div className="ac-top-right">
@@ -431,28 +433,55 @@ function AdminMatchCard({ match, onUpdate, onDelete }: { match: any; onUpdate: (
         <span className="ac-name">{getCode(match.teamB)}</span>
         <img src={getFlagUrl(match.teamB)} alt={match.teamB} className="ac-flag-img" />
       </div>
+
+      {isPending && (
+        <div className="ac-pending-hint">
+          ⏳ Introduce el resultado y pulsa <strong>Validar</strong> para calcular los puntos
+        </div>
+      )}
+
       <div className="ac-actions">
-        <button
-          className={`ac-btn live ${match.status === "LIVE" ? "live-on" : ""}`}
-          onClick={() => onUpdate(match.id, match.status === "LIVE"
-            ? { status: "UPCOMING" }
-            : { scoreA: sA, scoreB: sB, status: "LIVE" }
-          )}
-          title={match.status === "LIVE" ? "Cancelar LIVE y volver a Próximo" : "Marcar como en juego"}
-        >
-          <Zap size={13} />
-          {match.status === "LIVE" ? "Cancelar LIVE" : "LIVE"}
-        </button>
-        <button className="ac-btn finish" onClick={() => onUpdate(match.id, { scoreA: sA, scoreB: sB, status: "FINISHED" })}>
-          <Check size={13} /> Finalizar
-        </button>
-        <button className={`ac-btn star ${match.isStarMatch ? 'active' : ''}`} onClick={() => onUpdate(match.id, { isStarMatch: !match.isStarMatch })}>
-          ⭐ {match.isStarMatch ? "Estrella" : "Hacer Estrella"}
-        </button>
+        {isPending ? (
+          <>
+            <button
+              className="ac-btn validate"
+              onClick={() => onUpdate(match.id, { scoreA: sA, scoreB: sB, status: "FINISHED" })}
+            >
+              <Check size={13} /> Validar Resultado
+            </button>
+            <button className={`ac-btn star ${match.isStarMatch ? 'active' : ''}`} onClick={() => onUpdate(match.id, { isStarMatch: !match.isStarMatch })}>
+              ⭐ {match.isStarMatch ? "Estrella" : "Hacer Estrella"}
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              className={`ac-btn live ${match.status === "LIVE" ? "live-on" : ""}`}
+              onClick={() => onUpdate(match.id, match.status === "LIVE"
+                ? { status: "UPCOMING" }
+                : { scoreA: sA, scoreB: sB, status: "LIVE" }
+              )}
+              title={match.status === "LIVE" ? "Cancelar LIVE y volver a Próximo" : "Marcar como en juego"}
+            >
+              <Zap size={13} />
+              {match.status === "LIVE" ? "Cancelar LIVE" : "LIVE"}
+            </button>
+            <button className="ac-btn finish" onClick={() => onUpdate(match.id, { scoreA: sA, scoreB: sB, status: "FINISHED" })}>
+              <Check size={13} /> Finalizar
+            </button>
+            <button className={`ac-btn star ${match.isStarMatch ? 'active' : ''}`} onClick={() => onUpdate(match.id, { isStarMatch: !match.isStarMatch })}>
+              ⭐ {match.isStarMatch ? "Estrella" : "Hacer Estrella"}
+            </button>
+          </>
+        )}
       </div>
 
       <style jsx>{`
         .admin-card { padding: 0; overflow: hidden; }
+        .admin-card.card-pending {
+          border-color: rgba(251, 146, 60, 0.45);
+          box-shadow: 0 0 0 1px rgba(251, 146, 60, 0.12), 0 2px 12px rgba(251, 146, 60, 0.1);
+        }
         .ac-top {
           display: flex;
           justify-content: space-between;
@@ -480,6 +509,7 @@ function AdminMatchCard({ match, onUpdate, onDelete }: { match: any; onUpdate: (
         }
         .ac-status.upcoming { color: var(--text-muted); background: rgba(255,255,255,0.05); }
         .ac-status.live { color: #fbbf24; background: rgba(251, 191, 36, 0.15); }
+        .ac-status.pending { color: #fb923c; background: rgba(251, 146, 60, 0.15); }
         .ac-status.finished { color: var(--green); background: var(--green-glow); }
         .ac-teams {
           display: flex;
@@ -504,6 +534,16 @@ function AdminMatchCard({ match, onUpdate, onDelete }: { match: any; onUpdate: (
         }
         .ac-input:focus { outline: none; border-color: var(--green); }
         .ac-vs { color: var(--text-dim); font-weight: 700; }
+        .ac-pending-hint {
+          margin: 0 0.8rem 0.4rem;
+          padding: 0.45rem 0.65rem;
+          background: rgba(251, 146, 60, 0.08);
+          border: 1px solid rgba(251, 146, 60, 0.25);
+          border-radius: 6px;
+          font-size: 0.72rem;
+          color: #fb923c;
+          line-height: 1.4;
+        }
         .ac-actions {
           display: flex;
           gap: 0.5rem;
@@ -543,6 +583,12 @@ function AdminMatchCard({ match, onUpdate, onDelete }: { match: any; onUpdate: (
           background: var(--green-glow);
           color: var(--green);
           border: 1px solid rgba(0, 200, 83, 0.2);
+        }
+        .ac-btn.validate {
+          background: rgba(251, 146, 60, 0.15);
+          color: #fb923c;
+          border: 1px solid rgba(251, 146, 60, 0.35);
+          flex: 2;
         }
         .ac-btn.star {
           background: rgba(255, 255, 255, 0.05);

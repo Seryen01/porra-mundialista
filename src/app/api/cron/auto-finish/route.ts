@@ -49,6 +49,9 @@ export async function GET(req: Request) {
       });
 
       for (const apiMatch of apiMatches) {
+        // Saltar partidos TBD (equipos aún no determinados en fases eliminatorias)
+        if (!apiMatch.home_team || !apiMatch.away_team) continue;
+
         const homeTeamEs = normalizeTeamName(apiMatch.home_team);
         const awayTeamEs = normalizeTeamName(apiMatch.away_team);
         const kickoff = new Date(apiMatch.kickoff_utc);

@@ -39,8 +39,9 @@ interface LiveResponse {
 
 /** Sincroniza los partidos de la API con la BD. Idempotente y seguro para llamadas concurrentes. */
 async function syncMatchesToDB(apiMatches: WC2026Match[]): Promise<number> {
+  // Filtrar TBD (fases eliminatorias sin equipos aún definidos) y partidos relevantes
   const liveAndFinished = apiMatches.filter(
-    (m) => m.status === "live" || m.status === "finished"
+    (m) => (m.status === "live" || m.status === "finished") && m.home_team && m.away_team
   );
   if (liveAndFinished.length === 0) return 0;
 
@@ -129,16 +130,16 @@ export async function GET() {
 
     const matches: LiveResponseMatch[] = apiMatches
       .filter((m) => {
+        // Descartar TBD
+        if (!m.home_team || !m.away_team) return false;
         if (m.status === "live") return true;
         const kickoffMs = new Date(m.kickoff_utc).getTime();
-        // Partidos terminados en las últimas 3h
         if (m.status === "finished") return now - kickoffMs < THREE_HOURS;
-        // Partidos programados que empiezan en menos de 2h
         return kickoffMs > now && kickoffMs - now < 2 * 60 * 60 * 1000;
       })
       .map((m) => ({
-        homeTeam: normalizeTeamName(m.home_team),
-        awayTeam: normalizeTeamName(m.away_team),
+        homeTeam: normalizeTeamName(m.home_team) as string,
+        awayTeam: normalizeTeamName(m.away_team) as string,
         homeScore: m.home_score,
         awayScore: m.away_score,
         status: m.status,

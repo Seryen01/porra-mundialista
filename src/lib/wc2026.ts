@@ -120,36 +120,43 @@ for (const [en, es] of Object.entries(TEAM_NAME_MAP)) {
   }
 }
 
-/** Convierte nombre de equipo de la API (inglés) a nombre español (como en nuestra BD) */
-export function normalizeTeamName(apiName: string): string {
+/** Convierte nombre de equipo de la API (inglés) a nombre español (como en nuestra BD).
+ *  Devuelve null si el nombre es nulo/vacío (partido TBD). */
+export function normalizeTeamName(apiName: string | null | undefined): string | null {
+  if (!apiName) return null;
   return TEAM_NAME_MAP[apiName] ?? apiName;
 }
 
 /**
  * Busca en una lista de partidos de BD el que corresponde a los equipos y fecha del partido de la API.
- * Prueba: nombres en español, nombres en inglés y coincidencia case-insensitive.
+ * Devuelve undefined si algún nombre de equipo es nulo (partido TBD).
  */
 export function findMatchInList<T extends { teamA: string; teamB: string; date: Date }>(
   dbMatches: T[],
-  homeTeamSpanish: string,
-  awayTeamSpanish: string,
-  homeTeamEn: string,
-  awayTeamEn: string,
+  homeTeamSpanish: string | null,
+  awayTeamSpanish: string | null,
+  homeTeamEn: string | null,
+  awayTeamEn: string | null,
   kickoff: Date
 ): T | undefined {
+  // Si alguno de los nombres es nulo, el partido es TBD → no se puede hacer match
+  if (!homeTeamSpanish || !awayTeamSpanish || !homeTeamEn || !awayTeamEn) return undefined;
+
   // Ventana de 5h: cubre partidos con prórroga + tiempo entre kickoff real y el horario de BD
   const TIME_WINDOW_MS = 5 * 60 * 60 * 1000;
 
+  const homeSpLower = homeTeamSpanish.toLowerCase();
+  const awaySpLower = awayTeamSpanish.toLowerCase();
+  const homeEnLower = homeTeamEn.toLowerCase();
+  const awayEnLower = awayTeamEn.toLowerCase();
+
   return dbMatches.find((m) => {
+    if (!m.teamA || !m.teamB) return false;
     const dateOk = Math.abs(m.date.getTime() - kickoff.getTime()) < TIME_WINDOW_MS;
     if (!dateOk) return false;
 
     const teamALower = m.teamA.toLowerCase();
     const teamBLower = m.teamB.toLowerCase();
-    const homeSpLower = homeTeamSpanish.toLowerCase();
-    const awaySpLower = awayTeamSpanish.toLowerCase();
-    const homeEnLower = homeTeamEn.toLowerCase();
-    const awayEnLower = awayTeamEn.toLowerCase();
 
     return (
       (teamALower === homeSpLower && teamBLower === awaySpLower) ||
@@ -163,9 +170,10 @@ export function findMatchInList<T extends { teamA: string; teamB: string; date: 
 /** Determina si los equipos de la BD están en orden inverso respecto a la API (home/away) */
 export function isMatchReversed<T extends { teamA: string }>(
   dbMatch: T,
-  awayTeamSpanish: string,
-  awayTeamEn: string
+  awayTeamSpanish: string | null,
+  awayTeamEn: string | null
 ): boolean {
+  if (!dbMatch.teamA || !awayTeamSpanish || !awayTeamEn) return false;
   const a = dbMatch.teamA.toLowerCase();
   return a === awayTeamSpanish.toLowerCase() || a === awayTeamEn.toLowerCase();
 }

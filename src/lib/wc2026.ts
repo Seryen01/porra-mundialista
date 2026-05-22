@@ -21,131 +21,95 @@ export interface WC2026Match {
   stadium: string;
 }
 
-interface ApiResponse {
-  matches: WC2026Match[];
-}
+// La API devuelve un array directo, no un objeto envoltorio.
+// Tipo de respuesta: WC2026Match[] directamente.
 
 // Inglés → Español: mapeo completo de nombres de equipos WC2026
-// Debe coincidir con los nombres que usa el admin en la BD (basados en src/lib/flags.ts)
+// Basado en los nombres EXACTOS que devuelve la API (verificados contra respuesta real).
 export const TEAM_NAME_MAP: Record<string, string> = {
-  // América del Norte / Central / Caribe
-  Mexico: "México",
-  Canada: "Canadá",
-  "United States": "Estados Unidos",
-  USA: "Estados Unidos",
-  "United States of America": "Estados Unidos",
-  Panama: "Panamá",
-  Honduras: "Honduras",
-  "Costa Rica": "Costa Rica",
-  Haiti: "Haití",
-  Jamaica: "Jamaica",
-  "Trinidad and Tobago": "Trinidad y Tobago",
-  "Trinidad & Tobago": "Trinidad y Tobago",
-  "Curaçao": "Curasao",
-  Curacao: "Curasao",
-  Guatemala: "Guatemala",
-  "El Salvador": "El Salvador",
-  Nicaragua: "Nicaragua",
-  Cuba: "Cuba",
-  "Dominican Republic": "República Dominicana",
-
-  // América del Sur
-  Brazil: "Brasil",
+  // ── Nombres exactos que usa la API ──────────────────────────────────────────
+  // (comprobados con GET /matches el 2026-05-22)
+  Algeria: "Argelia",
   Argentina: "Argentina",
-  Uruguay: "Uruguay",
-  Colombia: "Colombia",
-  Ecuador: "Ecuador",
-  Paraguay: "Paraguay",
-  Peru: "Perú",
-  Chile: "Chile",
-  Bolivia: "Bolivia",
-  Venezuela: "Venezuela",
-
-  // Europa
-  Spain: "España",
-  Germany: "Alemania",
-  France: "Francia",
-  Portugal: "Portugal",
-  Netherlands: "Países Bajos",
-  Holland: "Países Bajos",
-  Italy: "Italia",
-  Belgium: "Bélgica",
-  Croatia: "Croacia",
-  England: "Inglaterra",
-  Scotland: "Escocia",
-  Wales: "Gales",
-  Switzerland: "Suiza",
+  Australia: "Australia",
   Austria: "Austria",
-  Norway: "Noruega",
-  Sweden: "Suecia",
-  "Czech Republic": "Chequia",
+  Belgium: "Bélgica",
+  "Bosnia-Herzegovina": "Bosnia y Herzegovina",  // API usa guion, no "and"
+  Brazil: "Brasil",
+  "Cabo Verde": "Cabo Verde",                    // API usa "Cabo Verde" (igual en español)
+  Canada: "Canadá",
+  Colombia: "Colombia",
+  "Congo DR": "RD Congo",                        // API usa "Congo DR"
+  Croatia: "Croacia",
+  "Curaçao": "Curasao",
   Czechia: "Chequia",
+  "Côte d'Ivoire": "Costa de Marfil",            // API usa acento
+  Ecuador: "Ecuador",
+  Egypt: "Egipto",
+  England: "Inglaterra",
+  France: "Francia",
+  Germany: "Alemania",
+  Ghana: "Ghana",
+  Haiti: "Haití",
+  "IR Iran": "Irán",                             // API usa "IR Iran"
+  Iraq: "Irak",
+  Japan: "Japón",
+  Jordan: "Jordania",
+  "Korea Republic": "República de Corea",
+  Mexico: "México",
+  Morocco: "Marruecos",
+  Netherlands: "Países Bajos",
+  "New Zealand": "Nueva Zelanda",
+  Norway: "Noruega",
+  Panama: "Panamá",
+  Paraguay: "Paraguay",
+  Portugal: "Portugal",
+  Qatar: "Catar",
+  "Saudi Arabia": "Arabia Saudí",
+  Scotland: "Escocia",
+  Senegal: "Senegal",
+  "South Africa": "Sudáfrica",
+  Spain: "España",
+  Sweden: "Suecia",
+  Switzerland: "Suiza",
+  Tunisia: "Túnez",
   Turkey: "Turquía",
-  "Türkiye": "Turquía",
+  USA: "Estados Unidos",
+  Uruguay: "Uruguay",
+  Uzbekistan: "Uzbekistán",
+
+  // ── Aliases / variantes por si la API cambia en fases finales ───────────────
+  "United States": "Estados Unidos",
+  "United States of America": "Estados Unidos",
   "Bosnia and Herzegovina": "Bosnia y Herzegovina",
   "Bosnia & Herzegovina": "Bosnia y Herzegovina",
+  "Cape Verde": "Cabo Verde",
+  "Cote d'Ivoire": "Costa de Marfil",
+  "Ivory Coast": "Costa de Marfil",
+  "DR Congo": "RD Congo",
+  "DRC Congo": "RD Congo",
+  Iran: "Irán",
+  "South Korea": "República de Corea",
+  "Korea, Republic of": "República de Corea",
+  "Türkiye": "Turquía",
+  Holland: "Países Bajos",
+  "Czech Republic": "Chequia",
+  Curacao: "Curasao",
+  Honduras: "Honduras",
+  "Costa Rica": "Costa Rica",
+  Jamaica: "Jamaica",
+  Italy: "Italia",
+  "Trinidad and Tobago": "Trinidad y Tobago",
   Denmark: "Dinamarca",
   Serbia: "Serbia",
   Ukraine: "Ucrania",
-  Hungary: "Hungría",
-  Romania: "Rumanía",
-  Slovakia: "Eslovaquia",
-  Slovenia: "Eslovenia",
-  Albania: "Albania",
-  Greece: "Grecia",
   Poland: "Polonia",
-  Russia: "Rusia",
-  "Republic of Ireland": "República de Irlanda",
-  Ireland: "República de Irlanda",
-  "Northern Ireland": "Irlanda del Norte",
-  Finland: "Finlandia",
-  Iceland: "Islandia",
-
-  // África
-  Morocco: "Marruecos",
-  "South Africa": "Sudáfrica",
-  Egypt: "Egipto",
-  Senegal: "Senegal",
-  Ghana: "Ghana",
-  Tunisia: "Túnez",
-  "Ivory Coast": "Costa de Marfil",
-  "Côte d'Ivoire": "Costa de Marfil",
-  "Cote d'Ivoire": "Costa de Marfil",
-  Algeria: "Argelia",
-  "DR Congo": "RD Congo",
-  "Congo DR": "RD Congo",
-  "DRC Congo": "RD Congo",
-  "Cape Verde": "Cabo Verde",
+  Wales: "Gales",
   Mali: "Malí",
   Cameroon: "Camerún",
   Nigeria: "Nigeria",
-  Zambia: "Zambia",
-  Uganda: "Uganda",
-  Kenya: "Kenia",
-
-  // Asia
-  Japan: "Japón",
-  "South Korea": "República de Corea",
-  "Korea Republic": "República de Corea",
-  "Korea, Republic of": "República de Corea",
-  "Saudi Arabia": "Arabia Saudí",
-  Iran: "Irán",
-  Iraq: "Irak",
-  Jordan: "Jordania",
-  Qatar: "Catar",
-  Uzbekistan: "Uzbekistán",
   China: "China",
   Indonesia: "Indonesia",
-  "United Arab Emirates": "Emiratos Árabes Unidos",
-  UAE: "Emiratos Árabes Unidos",
-  Bahrain: "Baréin",
-  Kuwait: "Kuwait",
-  Oman: "Omán",
-  Syria: "Siria",
-
-  // Oceanía
-  Australia: "Australia",
-  "New Zealand": "Nueva Zelanda",
 };
 
 // Mapa inverso: Español → Inglés (para buscar en la API)
@@ -224,11 +188,13 @@ async function fetchAllMatchesFromAPI(): Promise<WC2026Match[]> {
     throw new Error(`[wc2026] API error ${res.status}: ${res.statusText}`);
   }
 
-  const data: ApiResponse = await res.json();
-  if (!data.matches || !Array.isArray(data.matches)) {
-    throw new Error("[wc2026] Respuesta inesperada de la API");
+  const data: unknown = await res.json();
+
+  // La API devuelve un array directo (verificado 2026-05-22)
+  if (!Array.isArray(data)) {
+    throw new Error(`[wc2026] Respuesta inesperada: se esperaba array, recibido ${typeof data}`);
   }
-  return data.matches;
+  return data as WC2026Match[];
 }
 
 /** Devuelve todos los partidos del torneo (caché 60s). */

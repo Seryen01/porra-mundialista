@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { getFlagUrl, getCode, countryNames } from "@/lib/flags";
-import { Plus, Check, Zap, Trash2, Edit2, X } from "lucide-react";
+import { Plus, Check, Zap, Trash2, Edit2, X, ChevronDown, ChevronUp } from "lucide-react";
 
 export default function AdminPage() {
   const { data: session } = useSession();
@@ -545,6 +545,7 @@ function BonusSettingsSection() {
   const [settings, setSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
 
   // Configuracion de puntos
   const [topScorerPoints, setTopScorerPoints] = useState(10);
@@ -607,65 +608,88 @@ function BonusSettingsSection() {
   if (loading) return null;
 
   return (
-    <div className="card create-form animate-in">
-      <h3>🏆 Configuración y Resultados de Bonus</h3>
-      <form onSubmit={handleSave}>
-        
-        <h4 className="section-title">Puntuaciones</h4>
-        <div className="form-grid">
-          <div>
-            <label>Pts Goleador</label>
-            <input type="number" value={topScorerPoints} onChange={e => setTopScorerPoints(parseInt(e.target.value))} required />
-          </div>
-          <div>
-            <label>Pts Campeón</label>
-            <input type="number" value={championPoints} onChange={e => setChampionPoints(parseInt(e.target.value))} required />
-          </div>
-          <div>
-            <label>Pts España</label>
-            <input type="number" value={spainPoints} onChange={e => setSpainPoints(parseInt(e.target.value))} required />
-          </div>
-          <div>
-            <label>Pts MVP</label>
-            <input type="number" value={mvpPoints} onChange={e => setMvpPoints(parseInt(e.target.value))} required />
-          </div>
-        </div>
+    <div className="card create-form animate-in" style={{ padding: 0, overflow: "hidden" }}>
+      {/* Collapsible header */}
+      <div
+        className="bonus-toggle-header"
+        onClick={() => setCollapsed(c => !c)}
+        style={{ cursor: "pointer" }}
+      >
+        <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 700 }}>
+          🏆 Configuración y Resultados de Bonus
+        </h3>
+        {collapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+      </div>
 
-        <h4 className="section-title">Resultados Finales Oficiales</h4>
-        <div className="form-grid">
-          <div>
-            <label>Máximo Goleador Oficial</label>
-            <input type="text" value={actualTopScorer} onChange={e => setActualTopScorer(e.target.value)} placeholder="Dejar en blanco si no ha terminado" />
+      {!collapsed && (
+        <form onSubmit={handleSave} style={{ padding: "0 1.25rem 1.25rem" }}>
+          <h4 className="section-title">Puntuaciones</h4>
+          <div className="form-grid">
+            <div>
+              <label>Pts Goleador</label>
+              <input type="number" value={topScorerPoints} onChange={e => setTopScorerPoints(parseInt(e.target.value))} required />
+            </div>
+            <div>
+              <label>Pts Campeón</label>
+              <input type="number" value={championPoints} onChange={e => setChampionPoints(parseInt(e.target.value))} required />
+            </div>
+            <div>
+              <label>Pts España</label>
+              <input type="number" value={spainPoints} onChange={e => setSpainPoints(parseInt(e.target.value))} required />
+            </div>
+            <div>
+              <label>Pts MVP</label>
+              <input type="number" value={mvpPoints} onChange={e => setMvpPoints(parseInt(e.target.value))} required />
+            </div>
           </div>
-          <div>
-            <label>Campeón Oficial</label>
-            <input type="text" value={actualChampion} onChange={e => setActualChampion(e.target.value)} placeholder="Dejar en blanco si no ha terminado" />
-          </div>
-          <div>
-            <label>Resultado España Oficial</label>
-            <select value={actualSpainResult} onChange={e => setActualSpainResult(e.target.value)}>
-              <option value="">(No definido)</option>
-              <option value="Fase de grupos">Fase de grupos</option>
-              <option value="Dieciseisavos de final">Dieciseisavos de final</option>
-              <option value="Octavos de final">Octavos de final</option>
-              <option value="Cuartos de final">Cuartos de final</option>
-              <option value="Semifinales">Semifinales</option>
-              <option value="Final">Final</option>
-              <option value="Campeón">Campeón</option>
-            </select>
-          </div>
-          <div>
-            <label>MVP Oficial</label>
-            <input type="text" value={actualMvp} onChange={e => setActualMvp(e.target.value)} placeholder="Dejar en blanco si no ha terminado" />
-          </div>
-        </div>
 
-        <button type="submit" className="submit-btn bonus-save-btn" disabled={saving}>
-          <Check size={16} /> {saving ? "Guardando..." : "Guardar y Recalcular Bonus"}
-        </button>
-      </form>
+          <h4 className="section-title">Resultados Finales Oficiales</h4>
+          <div className="form-grid">
+            <div>
+              <label>Máximo Goleador Oficial</label>
+              <input type="text" value={actualTopScorer} onChange={e => setActualTopScorer(e.target.value)} placeholder="Dejar en blanco si no ha terminado" />
+            </div>
+            <div>
+              <label>Campeón Oficial</label>
+              <input type="text" value={actualChampion} onChange={e => setActualChampion(e.target.value)} placeholder="Dejar en blanco si no ha terminado" />
+            </div>
+            <div>
+              <label>Resultado España Oficial</label>
+              <select value={actualSpainResult} onChange={e => setActualSpainResult(e.target.value)}>
+                <option value="">(No definido)</option>
+                <option value="Fase de grupos">Fase de grupos</option>
+                <option value="Dieciseisavos de final">Dieciseisavos de final</option>
+                <option value="Octavos de final">Octavos de final</option>
+                <option value="Cuartos de final">Cuartos de final</option>
+                <option value="Semifinales">Semifinales</option>
+                <option value="Final">Final</option>
+                <option value="Campeón">Campeón</option>
+              </select>
+            </div>
+            <div>
+              <label>MVP Oficial</label>
+              <input type="text" value={actualMvp} onChange={e => setActualMvp(e.target.value)} placeholder="Dejar en blanco si no ha terminado" />
+            </div>
+          </div>
+
+          <button type="submit" className="submit-btn bonus-save-btn" disabled={saving}>
+            <Check size={16} /> {saving ? "Guardando..." : "Guardar y Recalcular Bonus"}
+          </button>
+        </form>
+      )}
 
       <style jsx>{`
+        .bonus-toggle-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 1rem 1.25rem;
+          color: var(--text-secondary);
+          transition: background 0.2s;
+        }
+        .bonus-toggle-header:hover {
+          background: rgba(255, 255, 255, 0.03);
+        }
         .section-title {
           font-size: 0.8rem;
           color: var(--gold);

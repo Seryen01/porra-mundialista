@@ -43,14 +43,19 @@ async function syncMatchResults(): Promise<{ updated: number; errors: number; lo
       const awayTeamEs = normalizeTeamName(apiMatch.away_team);
       const kickoff = new Date(apiMatch.kickoff_utc);
 
-      const dbMatch = findMatchInList(
-        dbMatches,
-        homeTeamEs,
-        awayTeamEs,
-        apiMatch.home_team,
-        apiMatch.away_team,
-        kickoff
-      );
+      // Primary: match by matchNumber (stable identifier, independent of date/name)
+      // Fallback: match by team names + date window (for records without matchNumber)
+      let dbMatch = dbMatches.find((m) => m.matchNumber != null && m.matchNumber === apiMatch.match_number);
+      if (!dbMatch) {
+        dbMatch = findMatchInList(
+          dbMatches,
+          homeTeamEs,
+          awayTeamEs,
+          apiMatch.home_team,
+          apiMatch.away_team,
+          kickoff
+        );
+      }
       if (!dbMatch) continue;
 
       if (apiMatch.status === "live" && dbMatch.status === "UPCOMING") {

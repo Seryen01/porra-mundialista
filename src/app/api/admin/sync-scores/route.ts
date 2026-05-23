@@ -19,7 +19,7 @@ import {
 import { cacheDelete } from "@/lib/cache";
 
 // Fases eliminatorias tal como están en la BD
-const KNOCKOUT_PHASES = ["Dieciseisavos", "Octavos", "Cuartos", "Semis", "Final"];
+const KNOCKOUT_PHASES = ["Dieciseisavos", "Octavos", "Cuartos", "Semis", "Final", "Tercer y cuarto puesto"];
 
 // ─── Función 1: Sync de resultados (partidos terminados) ──────────────────────
 

@@ -327,6 +327,7 @@ function AdminMatchCard({ match, onUpdate, onDelete }: { match: any; onUpdate: (
                 <option value="Octavos">Octavos</option>
                 <option value="Cuartos">Cuartos</option>
                 <option value="Semis">Semis</option>
+                <option value="Tercer y cuarto puesto">Tercer y cuarto puesto</option>
                 <option value="Final">Final</option>
               </optgroup>
             </select>

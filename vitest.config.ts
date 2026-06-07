@@ -11,7 +11,6 @@ export default defineConfig({
       reporter: ['text', 'html'],
       include: ['src/lib/**', 'src/app/api/**'],
       exclude: ['src/app/api/auth/**'],
-      all: true,
     },
   },
   resolve: {

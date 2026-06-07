@@ -1,9 +1,10 @@
 "use client";
 
 import { signOut, useSession } from "next-auth/react";
-import { LogOut, Shield, Mail, ChevronRight, ChevronDown, ChevronUp, Camera, Loader2, Trophy, Target, TrendingUp } from "lucide-react";
+import { LogOut, Shield, Mail, ChevronRight, ChevronDown, ChevronUp, Camera, Loader2, Trophy, Target, TrendingUp, Sun, Moon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { getFlagUrl } from "@/lib/flags";
+import { useTheme } from "@/hooks/useTheme";
 
 export default function ProfilePage() {
   const { data: session } = useSession();
@@ -11,6 +12,7 @@ export default function ProfilePage() {
   const [userData, setUserData] = useState<any>(null);
   const [localImage, setLocalImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { theme, toggleTheme } = useTheme();
 
   const isAdmin = (session?.user as any)?.role === "ADMIN";
   const userImage = localImage || userData?.image;
@@ -249,6 +251,20 @@ export default function ProfilePage() {
           <ChevronRight size={16} className="info-chevron" />
         </div>
         <div className="info-item">
+          <div className="info-icon" style={{ color: theme === 'light' ? 'var(--gold)' : 'var(--text-secondary)' }}>
+            {theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
+          </div>
+          <div className="info-content">
+            <span className="info-label">Apariencia</span>
+            <span className="info-value">{theme === 'dark' ? 'Oscuro' : 'Claro'}</span>
+          </div>
+          <div className={`switch ${theme === 'light' ? 'on' : ''}`} onClick={toggleTheme} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && toggleTheme()}>
+            <div className="switch-knob">
+              {theme === 'dark' ? <Moon size={10} /> : <Sun size={10} />}
+            </div>
+          </div>
+        </div>
+        <div className="info-item">
           <div className="info-icon">
             <Shield size={18} />
           </div>
@@ -414,6 +430,45 @@ export default function ProfilePage() {
         .info-chevron {
           color: var(--text-dim);
           flex-shrink: 0;
+        }
+        .switch {
+          width: 48px;
+          height: 26px;
+          border-radius: 13px;
+          background: var(--text-dim);
+          cursor: pointer;
+          flex-shrink: 0;
+          position: relative;
+          transition: background 0.3s ease;
+        }
+        .switch.on {
+          background: var(--gold);
+        }
+        .switch:active .switch-knob {
+          transform: scale(0.9);
+        }
+        .switch.on:active .switch-knob {
+          transform: translateX(22px) scale(0.9);
+        }
+        .switch-knob {
+          position: absolute;
+          top: 2px;
+          left: 2px;
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+          background: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: transform 0.3s ease;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+          color: var(--text-dim);
+          z-index: 1;
+        }
+        .switch.on .switch-knob {
+          transform: translateX(22px);
+          color: var(--gold);
         }
 
         .logout-btn {

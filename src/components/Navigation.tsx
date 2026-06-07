@@ -49,13 +49,13 @@ export default function Navigation() {
           left: 0;
           right: 0;
           height: 72px;
-          background: rgba(10, 14, 26, 0.92);
+          background: var(--nav-bg);
           backdrop-filter: blur(20px) saturate(180%);
           -webkit-backdrop-filter: blur(20px) saturate(180%);
           display: flex;
           justify-content: space-around;
           align-items: center;
-          border-top: 1px solid rgba(255, 255, 255, 0.06);
+          border-top: 1px solid var(--nav-border);
           z-index: 1000;
           padding-bottom: env(safe-area-inset-bottom);
         }

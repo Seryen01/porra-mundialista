@@ -52,22 +52,23 @@ export async function calculatePoints(
   const realOutcome = scoreA > scoreB ? "1" : scoreA < scoreB ? "2" : "X";
 
   const predictions = await prisma.prediction.findMany({ where: { matchId } });
+  console.log(`[scoring] Calculando puntos para ${predictions.length} predicciones del partido ${matchId}`);
 
-  for (const prediction of predictions) {
+  const updates = predictions.map((prediction) => {
     const predA = prediction.predictedScoreA;
     const predB = prediction.predictedScoreB;
     const predOutcome = predA > predB ? "1" : predA < predB ? "2" : "X";
 
     let points = 0;
     if (predA === scoreA && predB === scoreB) {
-      points = pointsExact;          // resultado exacto
+      points = pointsExact;
     } else if (predOutcome === realOutcome) {
-      points = pointsOutcome;        // solo acierta V/E/D
+      points = pointsOutcome;
     }
 
-    await prisma.prediction.update({
-      where: { id: prediction.id },
-      data: { points },
-    });
-  }
+    return prisma.prediction.update({ where: { id: prediction.id }, data: { points } });
+  });
+
+  await prisma.$transaction(updates);
+  console.log(`[scoring] Puntos calculados correctamente para ${updates.length} predicciones`);
 }

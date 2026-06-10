@@ -124,7 +124,11 @@ for (const [en, es] of Object.entries(TEAM_NAME_MAP)) {
  *  Devuelve null si el nombre es nulo/vacío (partido TBD). */
 export function normalizeTeamName(apiName: string | null | undefined): string | null {
   if (!apiName) return null;
-  return TEAM_NAME_MAP[apiName] ?? apiName;
+  const mapped = TEAM_NAME_MAP[apiName];
+  if (!mapped) {
+    console.warn("[wc2026] Equipo no mapeado en TEAM_NAME_MAP — añadir alias si aparece en partidos reales", { apiName });
+  }
+  return mapped ?? apiName;
 }
 
 /**

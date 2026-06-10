@@ -56,11 +56,12 @@ export async function PATCH(req: Request) {
     }
   });
 
-  // Si se envían resultados, recalculamos automáticamente todos los bonus
+  // Si se envían resultados, recalculamos automáticamente todos los bonus en una sola transacción
   if (actualTopScorer !== undefined || actualChampion !== undefined || actualSpainResult !== undefined || actualMvp !== undefined) {
     const allBonuses = await prisma.userBonus.findMany();
+    console.log("[settings] Recalculando bonus para todos los usuarios", { count: allBonuses.length, settings: { actualTopScorer: settings.actualTopScorer, actualChampion: settings.actualChampion, actualSpainResult: settings.actualSpainResult, actualMvp: settings.actualMvp } });
 
-    for (const b of allBonuses) {
+    const updates = allBonuses.map((b) => {
       let total = 0;
       if (settings.actualTopScorer && b.topScorer && b.topScorer.trim().toLowerCase() === settings.actualTopScorer.trim().toLowerCase()) {
         total += settings.topScorerPoints;
@@ -74,12 +75,11 @@ export async function PATCH(req: Request) {
       if (settings.actualMvp && b.mvp && b.mvp.trim().toLowerCase() === settings.actualMvp.trim().toLowerCase()) {
         total += settings.mvpPoints;
       }
+      return prisma.userBonus.update({ where: { id: b.id }, data: { points: total } });
+    });
 
-      await prisma.userBonus.update({
-        where: { id: b.id },
-        data: { points: total }
-      });
-    }
+    await prisma.$transaction(updates);
+    console.log("[settings] Recálculo de bonus completado", { updatedCount: updates.length });
   }
 
   return NextResponse.json(settings);

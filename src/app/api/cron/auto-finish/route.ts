@@ -61,14 +61,18 @@ async function syncKnockoutTeams(): Promise<number> {
 }
 
 export async function GET(req: Request) {
-  // Protección en producción: requiere CRON_SECRET si está configurado
-  const authHeader = req.headers.get("authorization");
-  if (
-    process.env.NODE_ENV === "production" &&
-    process.env.CRON_SECRET &&
-    authHeader !== `Bearer ${process.env.CRON_SECRET}`
-  ) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // En producción CRON_SECRET es obligatorio — si no está configurado, fallo explícito
+  if (process.env.NODE_ENV === "production") {
+    const cronSecret = process.env.CRON_SECRET;
+    if (!cronSecret) {
+      console.error("[cron-auto-finish] CRON_SECRET no configurado en producción");
+      return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
+    }
+    const authHeader = req.headers.get("authorization");
+    if (authHeader !== `Bearer ${cronSecret}`) {
+      console.warn("[cron-auto-finish] Intento de acceso no autorizado", { authHeader: !!authHeader });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
   }
 
   const now = new Date();

@@ -906,8 +906,7 @@ function BonusSection() {
 
   useEffect(() => {
     fetchBonus();
-    const tournamentStart = new Date("2026-06-11T20:00:00Z");
-    setIsLocked(new Date() >= tournamentStart);
+    setIsLocked(new Date() >= new Date("2026-06-11T20:00:00Z"));
   }, []);
 
   const fetchBonus = async () => {

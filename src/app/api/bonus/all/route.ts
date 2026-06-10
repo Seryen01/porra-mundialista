@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-
-const TOURNAMENT_START = new Date("2026-06-11T20:00:00Z");
+import { TOURNAMENT_START } from "@/lib/config";
 
 export async function GET() {
   const session = await getServerSession(authOptions);

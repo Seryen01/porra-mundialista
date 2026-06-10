@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 export const authOptions: AuthOptions = {
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 días
   },
   providers: [
     CredentialsProvider({
@@ -58,5 +59,9 @@ export const authOptions: AuthOptions = {
   pages: {
     signIn: "/login",
   },
-  secret: process.env.NEXTAUTH_SECRET || "any-secret-for-now",
+  secret: process.env.NEXTAUTH_SECRET ?? (() => {
+    if (process.env.NODE_ENV === "production")
+      throw new Error("[auth] NEXTAUTH_SECRET debe estar configurado en producción");
+    return "dev-only-secret-not-for-production";
+  })(),
 };

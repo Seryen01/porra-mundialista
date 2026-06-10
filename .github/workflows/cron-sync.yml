@@ -1,0 +1,33 @@
+name: Sync match scores
+
+on:
+  schedule:
+    # Cada 5 minutos durante todo el torneo (11 jun – 19 jul 2026)
+    - cron: "*/5 * * * *"
+  workflow_dispatch: # permite lanzarlo manualmente desde GitHub
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: Trigger auto-finish endpoint
+        run: |
+          STATUS=$(curl --silent --output /dev/null --write-out "%{http_code}" \
+            --max-time 30 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/cron/auto-finish")
+
+          echo "HTTP status: $STATUS"
+
+          if [ "$STATUS" -ne 200 ]; then
+            echo "Error: el endpoint devolvió HTTP $STATUS"
+            exit 1
+          fi
+
+      - name: Log response
+        run: |
+          curl --silent --max-time 30 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/cron/auto-finish" | python3 -m json.tool || true

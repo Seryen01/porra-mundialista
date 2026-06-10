@@ -176,14 +176,18 @@ async function syncKnockoutTeams(): Promise<{ updated: number; errors: number; l
 // ─── Handler POST ─────────────────────────────────────────────────────────────
 
 export async function POST(req: Request) {
-  // Protección: requiere x-cron-secret en producción
-  const secret = req.headers.get("x-cron-secret") ?? req.headers.get("authorization")?.replace("Bearer ", "");
-  if (
-    process.env.NODE_ENV === "production" &&
-    process.env.CRON_SECRET &&
-    secret !== process.env.CRON_SECRET
-  ) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // En producción CRON_SECRET es obligatorio — si no está configurado, fallo explícito
+  if (process.env.NODE_ENV === "production") {
+    const cronSecret = process.env.CRON_SECRET;
+    if (!cronSecret) {
+      console.error("[sync-scores] CRON_SECRET no configurado en producción");
+      return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
+    }
+    const secret = req.headers.get("x-cron-secret") ?? req.headers.get("authorization")?.replace("Bearer ", "");
+    if (secret !== cronSecret) {
+      console.warn("[sync-scores] Intento de acceso no autorizado", { hasSecret: !!secret });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
   }
 
   const apiEnabled =

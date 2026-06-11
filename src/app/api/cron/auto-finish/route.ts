@@ -76,6 +76,35 @@ export async function GET(req: Request) {
   }
 
   const now = new Date();
+
+  // ═══════════════════════════════════════════════════════
+  // GUARDIA: evitar llamadas a la API externa si no hay
+  // partidos activos ni inminentes (ahorra cuota de API)
+  // ═══════════════════════════════════════════════════════
+  const thirtyMinutesFromNow = new Date(now.getTime() + 30 * 60 * 1000);
+  const activeOrImminent = await prisma.match.count({
+    where: {
+      OR: [
+        { status: "LIVE" },
+        { status: "UPCOMING", date: { lte: thirtyMinutesFromNow } },
+      ],
+    },
+  });
+
+  if (activeOrImminent === 0) {
+    console.log("[cron-auto-finish] SKIP — sin partidos activos ni inminentes", {
+      checkedAt: now.toISOString(),
+    });
+    return NextResponse.json({
+      success: true,
+      skipped: true,
+      reason: "no active or imminent matches",
+      timestamp: now.toISOString(),
+    });
+  }
+
+  console.log("[cron-auto-finish] Guard OK — continuando sync", { activeOrImminent });
+
   let changedCount = 0;
   let syncedFromApi = false;
   let knockoutTeamsUpdated = 0;

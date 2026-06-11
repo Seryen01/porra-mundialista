@@ -14,7 +14,10 @@ export async function GET() {
     where: { userId: (session.user as any).id }
   });
 
-  return NextResponse.json(bonus || {});
+  const isLocked = new Date() >= TOURNAMENT_START;
+  console.log('[bonus] GET - isLocked:', isLocked, 'now:', new Date().toISOString(), 'start:', TOURNAMENT_START.toISOString());
+
+  return NextResponse.json({ ...bonus, isLocked });
 }
 
 export async function POST(req: Request) {
@@ -23,10 +26,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (new Date() >= TOURNAMENT_START) {
+  const now = new Date();
+  if (now >= TOURNAMENT_START) {
+    console.log('[bonus] POST - Torneo bloqueado. now:', now.toISOString(), 'start:', TOURNAMENT_START.toISOString());
     return NextResponse.json({ error: "El torneo ya ha comenzado. No se pueden modificar los bonus." }, { status: 400 });
   }
 
+  console.log('[bonus] POST - Guardando bonus. now:', now.toISOString(), 'start:', TOURNAMENT_START.toISOString());
   const { topScorer, champion, spainResult, mvp } = await req.json();
   const userId = (session.user as any).id;
 

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { getFlagUrl, getCode } from "@/lib/flags";
+import { TOURNAMENT_START } from "@/lib/config";
 import { Lock, Check, Pencil, ChevronDown, ChevronUp } from "lucide-react";
 import { useLiveScores, type LiveMatch } from "@/hooks/useLiveScores";
 
@@ -906,13 +907,13 @@ function BonusSection() {
 
   useEffect(() => {
     fetchBonus();
-    setIsLocked(new Date() >= new Date("2026-06-11T20:00:00Z"));
   }, []);
 
   const fetchBonus = async () => {
     const res = await fetch("/api/bonus");
     if (res.ok) {
       const data = await res.json();
+      console.log('[bonus-section] fetchBonus result:', { hasUserId: !!data.userId, isLocked: data.isLocked });
       if (data.userId) {
         setBonus(data);
         setTopScorer(data.topScorer || "");
@@ -921,6 +922,8 @@ function BonusSection() {
         setMvp(data.mvp || "");
         setCollapsed(true);
       }
+      // Use isLocked from server
+      setIsLocked(data.isLocked === true);
     }
     setLoading(false);
   };
@@ -928,10 +931,18 @@ function BonusSection() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    await fetch("/api/bonus", {
+    const res = await fetch("/api/bonus", {
       method: "POST",
       body: JSON.stringify({ topScorer, champion, spainResult, mvp }),
     });
+    if (!res.ok) {
+      const errData = await res.json();
+      console.log('[bonus-section] Save blocked:', errData);
+      // Server says torneo is locked, update UI
+      if (res.status === 400) {
+        setIsLocked(true);
+      }
+    }
     setSaving(false);
     await fetchBonus();
     setCollapsed(true);

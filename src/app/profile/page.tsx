@@ -746,6 +746,7 @@ function AllBonusSection({ currentUserId }: { currentUserId?: string }) {
     fetch("/api/bonus/all")
       .then(r => r.json())
       .then(data => {
+        console.log('[all-bonus-section] API response:', { visible: data.visible, bonusCount: data.bonuses?.length || 0 });
         setVisible(data.visible);
         setBonuses(data.bonuses || []);
         setLoading(false);

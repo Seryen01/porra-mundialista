@@ -3,6 +3,7 @@
 // Auth: Bearer token via WC2026_API_KEY env var
 
 import { cacheGet, cacheSet } from "./cache";
+import { prisma } from "./prisma";
 
 const BASE_URL = "https://api.wc2026api.com";
 const CACHE_TTL = 60; // 60 segundos — máximo 1 llamada/minuto a la API externa
@@ -206,6 +207,19 @@ async function fetchAllMatchesFromAPI(): Promise<WC2026Match[]> {
   if (!Array.isArray(data)) {
     throw new Error(`[wc2026] Respuesta inesperada: se esperaba array, recibido ${typeof data}`);
   }
+
+  // Contabilizar la llamada real a la API (no la del caché)
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+  prisma.dailyApiUsage
+    .upsert({
+      where: { date: today },
+      create: { date: today, callCount: 1 },
+      update: { callCount: { increment: 1 } },
+    })
+    .then((row) => console.log("[wc2026] API call contabilizada", { date: row.date, callCount: row.callCount }))
+    .catch((err) => console.warn("[wc2026] Error registrando uso de API", err));
+
   return data as WC2026Match[];
 }
 

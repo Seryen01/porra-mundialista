@@ -68,6 +68,12 @@ model UserBonus {
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model DailyApiUsage {
+  date      DateTime @id // Truncado a medianoche UTC (un registro por día)
+  callCount Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
 model AppSettings {
   id               String   @id @default("default")
   topScorerPoints  Int      @default(10)

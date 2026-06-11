@@ -9,7 +9,9 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   // Only expose other users' predictions after the tournament has started
-  const visible = new Date() >= TOURNAMENT_START;
+  const now = new Date();
+  const visible = now >= TOURNAMENT_START;
+  console.log('[bonus/all] GET - visible:', visible, 'now:', now.toISOString(), 'start:', TOURNAMENT_START.toISOString());
   if (!visible) return NextResponse.json({ visible: false, bonuses: [] });
 
   const bonuses = await prisma.userBonus.findMany({

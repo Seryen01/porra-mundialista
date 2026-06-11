@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { TOURNAMENT_START } from "@/lib/config";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -15,7 +16,7 @@ export default function LoginPage() {
   const [started, setStarted] = useState(false);
 
   useEffect(() => {
-    const TARGET = new Date("2026-06-11T20:00:00Z").getTime();
+    const TARGET = TOURNAMENT_START.getTime();
     function tick() {
       const diff = TARGET - Date.now();
       if (diff <= 0) { setStarted(true); setCountdown(null); return; }

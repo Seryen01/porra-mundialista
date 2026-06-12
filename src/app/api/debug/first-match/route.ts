@@ -64,12 +64,12 @@ export async function GET() {
         analysis.cause = "API no encontró el partido";
       } else if (apiMatch.status === "live") {
         analysis.cause = "API aún reporta status='live' (no ha finalizado)";
-      } else if (apiMatch.status === "finished") {
+      } else if (apiMatch.status === "finished" || apiMatch.status === "completed") {
         if (apiMatch.home_score === null || apiMatch.away_score === null) {
-          analysis.cause = "API reporta 'finished' pero scores son null";
+          analysis.cause = `API reporta '${apiMatch.status}' pero scores son null`;
           analysis.action = "❌ La BD no puede transicionar a FINISHED sin scores válidos";
         } else {
-          analysis.cause = "API reporta 'finished' con scores, pero BD no se sincronizó";
+          analysis.cause = `API reporta '${apiMatch.status}' con scores, pero BD no se sincronizó`;
           analysis.action = "⚠️ Probablemente falta ejecutar el cron sync";
         }
       } else {

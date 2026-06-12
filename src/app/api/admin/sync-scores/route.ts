@@ -66,7 +66,7 @@ async function syncMatchResults(): Promise<{ updated: number; errors: number; lo
         updated++;
         logs.push(`→ LIVE: ${dbMatch.teamA} vs ${dbMatch.teamB}`);
       } else if (
-        apiMatch.status === "finished" &&
+        (apiMatch.status === "finished" || apiMatch.status === "completed") &&
         apiMatch.home_score !== null &&
         apiMatch.away_score !== null
       ) {

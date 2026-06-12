@@ -17,7 +17,7 @@ export interface WC2026Match {
   away_team: string;
   home_score: number | null;
   away_score: number | null;
-  status: "scheduled" | "live" | "finished";
+  status: "scheduled" | "live" | "finished" | "completed";
   kickoff_utc: string; // ISO datetime
   stadium: string;
 }
@@ -208,6 +208,13 @@ async function fetchAllMatchesFromAPI(): Promise<WC2026Match[]> {
     throw new Error(`[wc2026] Respuesta inesperada: se esperaba array, recibido ${typeof data}`);
   }
 
+  // Log de status values reales — permite verificar qué strings devuelve la API en producción
+  const statusSummary = (data as WC2026Match[]).reduce<Record<string, number>>((acc, m) => {
+    acc[m.status] = (acc[m.status] ?? 0) + 1;
+    return acc;
+  }, {});
+  console.log("[wc2026] Status values recibidos de la API", statusSummary);
+
   // Contabilizar la llamada real a la API (no la del caché)
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
@@ -278,6 +285,6 @@ export async function getLiveAndRecentMatches(): Promise<WC2026Match[]> {
   return all.filter((m) => {
     if (m.status === "live") return true;
     const kickoffMs = new Date(m.kickoff_utc).getTime();
-    return m.status === "finished" && now - kickoffMs < THREE_HOURS;
+    return (m.status === "finished" || m.status === "completed") && now - kickoffMs < THREE_HOURS;
   });
 }

@@ -49,7 +49,7 @@ export async function POST(req: Request) {
       }
       // LIVE/PENDING → FINISHED con scores
       else if (
-        apiMatch.status === "finished" &&
+        (apiMatch.status === "finished" || apiMatch.status === "completed") &&
         apiMatch.home_score !== null &&
         apiMatch.away_score !== null
       ) {
@@ -70,8 +70,8 @@ export async function POST(req: Request) {
           synced++;
         }
       }
-      // API reporta finished sin scores
-      else if (apiMatch.status === "finished" && (apiMatch.home_score === null || apiMatch.away_score === null)) {
+      // API reporta finished/completed sin scores
+      else if ((apiMatch.status === "finished" || apiMatch.status === "completed") && (apiMatch.home_score === null || apiMatch.away_score === null)) {
         logs.push(
           `⚠️ SKIPPED: ${dbMatch.teamA} vs ${dbMatch.teamB} - API reporta finished pero scores = null`
         );

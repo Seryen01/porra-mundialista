@@ -41,7 +41,7 @@ interface LiveResponse {
 async function syncMatchesToDB(apiMatches: WC2026Match[]): Promise<number> {
   // Filtrar TBD (fases eliminatorias sin equipos aún definidos) y partidos relevantes
   const liveAndFinished = apiMatches.filter(
-    (m) => (m.status === "live" || m.status === "finished") && m.home_team && m.away_team
+    (m) => (m.status === "live" || m.status === "finished" || m.status === "completed") && m.home_team && m.away_team
   );
   if (liveAndFinished.length === 0) return 0;
 
@@ -77,7 +77,7 @@ async function syncMatchesToDB(apiMatches: WC2026Match[]): Promise<number> {
       console.log(`[live-sync] LIVE: ${dbMatch.teamA} vs ${dbMatch.teamB}`);
       synced++;
     } else if (
-      apiMatch.status === "finished" &&
+      (apiMatch.status === "finished" || apiMatch.status === "completed") &&
       apiMatch.home_score !== null &&
       apiMatch.away_score !== null
     ) {
@@ -134,7 +134,7 @@ export async function GET() {
         if (!m.home_team || !m.away_team) return false;
         if (m.status === "live") return true;
         const kickoffMs = new Date(m.kickoff_utc).getTime();
-        if (m.status === "finished") return now - kickoffMs < THREE_HOURS;
+        if (m.status === "finished" || m.status === "completed") return now - kickoffMs < THREE_HOURS;
         return kickoffMs > now && kickoffMs - now < 2 * 60 * 60 * 1000;
       })
       .map((m) => ({
@@ -142,7 +142,7 @@ export async function GET() {
         awayTeam: normalizeTeamName(m.away_team) as string,
         homeScore: m.home_score,
         awayScore: m.away_score,
-        status: m.status,
+        status: (m.status === "completed" ? "finished" : m.status) as LiveResponseMatch["status"],
         kickoffUtc: m.kickoff_utc,
       }));
 

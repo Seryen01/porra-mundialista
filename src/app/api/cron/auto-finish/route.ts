@@ -183,9 +183,19 @@ export async function GET(req: Request) {
       // score que ya nos devuelve para cerrar el partido automáticamente.
       // Solo aplica a fase de grupos (sin prórroga ni penaltis posibles).
       const THREE_HOURS_MS = 120 * 60 * 1000; // 120 min — umbral seguro para fase de grupos (sin prórroga)
-      const stuckGroupMatches = dbMatches.filter(
+      const liveOrPendingMatches = dbMatches.filter((m) => m.status === "LIVE" || m.status === "PENDING");
+      console.log("[cron-auto-finish] DIAG — partidos LIVE/PENDING en BD", liveOrPendingMatches.map((m) => ({
+        teams: `${m.teamA} vs ${m.teamB}`,
+        status: m.status,
+        phase: m.phase,
+        date: m.date.toISOString(),
+        ageMinutes: Math.round((now.getTime() - m.date.getTime()) / 60000),
+        phaseHasGrupo: m.phase.toLowerCase().includes("grupo"),
+        over120min: now.getTime() - m.date.getTime() > THREE_HOURS_MS,
+      })));
+
+      const stuckGroupMatches = liveOrPendingMatches.filter(
         (m) =>
-          (m.status === "LIVE" || m.status === "PENDING") &&
           m.phase.toLowerCase().includes("grupo") &&
           now.getTime() - m.date.getTime() > THREE_HOURS_MS
       );

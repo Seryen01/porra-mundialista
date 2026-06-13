@@ -154,7 +154,7 @@ export async function GET(req: Request) {
           changedCount++;
           logs.push(`→ LIVE: ${dbMatch.teamA} vs ${dbMatch.teamB}`);
         } else if (
-          apiMatch.status === "finished" &&
+          (apiMatch.status === "finished" || apiMatch.status === "completed") &&
           apiMatch.home_score !== null &&
           apiMatch.away_score !== null
         ) {
@@ -223,6 +223,34 @@ export async function GET(req: Request) {
         logs.push(`[fallback] → PENDING: ${match.teamA} vs ${match.teamB}`);
       }
     }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // RED DE SEGURIDAD: partidos LIVE bloqueados por la API
+  // Corre siempre, incluso cuando la API responde con "live"
+  // Si un partido lleva >3h en LIVE → pasa a PENDING para
+  // que el Admin lo cierre manualmente
+  // ═══════════════════════════════════════════════════════
+  const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
+  const stuckMatches = await prisma.match.findMany({
+    where: {
+      status: "LIVE",
+      date: { lte: new Date(now.getTime() - THREE_HOURS_MS) },
+    },
+  });
+
+  for (const match of stuckMatches) {
+    await prisma.match.update({
+      where: { id: match.id },
+      data: { status: "PENDING" },
+    });
+    changedCount++;
+    console.warn("[cron-auto-finish] Partido bloqueado en LIVE pasado a PENDING", {
+      match: `${match.teamA} vs ${match.teamB}`,
+      kickoff: match.date,
+      hoursLive: ((now.getTime() - match.date.getTime()) / 3600000).toFixed(1),
+    });
+    logs.push(`[safety] → PENDING (bloqueado >3h): ${match.teamA} vs ${match.teamB}`);
   }
 
   return NextResponse.json({

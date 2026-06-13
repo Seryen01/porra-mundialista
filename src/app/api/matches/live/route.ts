@@ -70,7 +70,7 @@ async function syncMatchesToDB(apiMatches: WC2026Match[]): Promise<number> {
 
     const isStuckGroupMatch = 
       dbMatch.phase.toLowerCase().includes("grupo") &&
-      Date.now() - dbMatch.date.getTime() > 3 * 60 * 60 * 1000;
+      Date.now() - dbMatch.date.getTime() > 120 * 60 * 1000;
 
     if (apiMatch.status === "live" && dbMatch.status === "UPCOMING" && !isStuckGroupMatch) {
       // UPCOMING → LIVE

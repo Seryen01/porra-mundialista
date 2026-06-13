@@ -177,6 +177,62 @@ export async function GET(req: Request) {
         }
       }
 
+      // ── Red de seguridad: fase de grupos bloqueada en LIVE ──────────────
+      // Si la API sigue diciendo "live" pasadas 3h del kickoff, usamos el
+      // score que ya nos devuelve para cerrar el partido automáticamente.
+      // Solo aplica a fase de grupos (sin prórroga ni penaltis posibles).
+      const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
+      const stuckGroupMatches = dbMatches.filter(
+        (m) =>
+          m.status === "LIVE" &&
+          m.phase.toLowerCase().includes("grupo") &&
+          now.getTime() - m.date.getTime() > THREE_HOURS_MS
+      );
+
+      for (const stuckMatch of stuckGroupMatches) {
+        const homeTeamEs = normalizeTeamName(stuckMatch.teamA) ?? stuckMatch.teamA;
+        const apiMatch = apiMatches.find((a) => {
+          if (!a.home_team || !a.away_team) return false;
+          const h = normalizeTeamName(a.home_team);
+          const aw = normalizeTeamName(a.away_team);
+          return (
+            (h === stuckMatch.teamA && aw === stuckMatch.teamB) ||
+            (h === stuckMatch.teamB && aw === stuckMatch.teamA)
+          );
+        });
+
+        if (!apiMatch || apiMatch.home_score === null || apiMatch.away_score === null) {
+          console.warn("[cron-auto-finish] Partido grupo bloqueado sin score disponible en API", {
+            match: `${stuckMatch.teamA} vs ${stuckMatch.teamB}`,
+            apiStatus: apiMatch?.status ?? "no encontrado",
+          });
+          logs.push(`[safety] Sin score en API: ${stuckMatch.teamA} vs ${stuckMatch.teamB}`);
+          continue;
+        }
+
+        const reversed = isMatchReversed(stuckMatch, normalizeTeamName(apiMatch.away_team), apiMatch.away_team);
+        const scoreA = reversed ? apiMatch.away_score : apiMatch.home_score;
+        const scoreB = reversed ? apiMatch.home_score : apiMatch.away_score;
+
+        const result = await prisma.match.updateMany({
+          where: { id: stuckMatch.id, status: { not: "FINISHED" } },
+          data: { scoreA, scoreB, status: "FINISHED" },
+        });
+
+        if (result.count > 0) {
+          await calculatePoints(stuckMatch.id, scoreA, scoreB);
+          changedCount++;
+          console.log("[cron-auto-finish] Partido grupo cerrado por safety net", {
+            match: `${stuckMatch.teamA} vs ${stuckMatch.teamB}`,
+            score: `${scoreA}-${scoreB}`,
+            apiStatus: apiMatch.status,
+          });
+          logs.push(
+            `[safety] → FINISHED: ${stuckMatch.teamA} ${scoreA}-${scoreB} ${stuckMatch.teamB} (>3h en LIVE, puntos calculados)`
+          );
+        }
+      }
+
       // Sincronizar equipos de fases eliminatorias cuando la API los revele
       knockoutTeamsUpdated = await syncKnockoutTeams();
       if (knockoutTeamsUpdated > 0) {
@@ -225,33 +281,6 @@ export async function GET(req: Request) {
     }
   }
 
-  // ═══════════════════════════════════════════════════════
-  // RED DE SEGURIDAD: partidos LIVE bloqueados por la API
-  // Corre siempre, incluso cuando la API responde con "live"
-  // Si un partido lleva >3h en LIVE → pasa a PENDING para
-  // que el Admin lo cierre manualmente
-  // ═══════════════════════════════════════════════════════
-  const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
-  const stuckMatches = await prisma.match.findMany({
-    where: {
-      status: "LIVE",
-      date: { lte: new Date(now.getTime() - THREE_HOURS_MS) },
-    },
-  });
-
-  for (const match of stuckMatches) {
-    await prisma.match.update({
-      where: { id: match.id },
-      data: { status: "PENDING" },
-    });
-    changedCount++;
-    console.warn("[cron-auto-finish] Partido bloqueado en LIVE pasado a PENDING", {
-      match: `${match.teamA} vs ${match.teamB}`,
-      kickoff: match.date,
-      hoursLive: ((now.getTime() - match.date.getTime()) / 3600000).toFixed(1),
-    });
-    logs.push(`[safety] → PENDING (bloqueado >3h): ${match.teamA} vs ${match.teamB}`);
-  }
 
   return NextResponse.json({
     success: true,

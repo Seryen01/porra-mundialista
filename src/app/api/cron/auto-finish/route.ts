@@ -86,6 +86,7 @@ export async function GET(req: Request) {
     where: {
       OR: [
         { status: "LIVE" },
+        { status: "PENDING" },
         { status: "UPCOMING", date: { lte: thirtyMinutesFromNow } },
       ],
     },
@@ -184,7 +185,7 @@ export async function GET(req: Request) {
       const THREE_HOURS_MS = 120 * 60 * 1000; // 120 min — umbral seguro para fase de grupos (sin prórroga)
       const stuckGroupMatches = dbMatches.filter(
         (m) =>
-          m.status === "LIVE" &&
+          (m.status === "LIVE" || m.status === "PENDING") &&
           m.phase.toLowerCase().includes("grupo") &&
           now.getTime() - m.date.getTime() > THREE_HOURS_MS
       );

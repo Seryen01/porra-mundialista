@@ -38,7 +38,7 @@ export async function GET() {
         teams: `${normalizeTeamName(apiMatch?.home_team)} vs ${normalizeTeamName(apiMatch?.away_team)}`,
         status: apiMatch?.status,
         scores: apiMatch?.home_score !== null && apiMatch?.away_score !== null 
-          ? `${apiMatch.home_score}-${apiMatch.away_score}` 
+          ? `${apiMatch?.home_score}-${apiMatch?.away_score}` 
           : `home=${apiMatch?.home_score}, away=${apiMatch?.away_score}`,
         kickoff: apiMatch?.kickoff_utc,
       });

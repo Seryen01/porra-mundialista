@@ -68,7 +68,11 @@ async function syncMatchesToDB(apiMatches: WC2026Match[]): Promise<number> {
     );
     if (!dbMatch) continue;
 
-    if (apiMatch.status === "live" && dbMatch.status === "UPCOMING") {
+    const isStuckGroupMatch = 
+      dbMatch.phase.toLowerCase().includes("grupo") &&
+      Date.now() - dbMatch.date.getTime() > 3 * 60 * 60 * 1000;
+
+    if (apiMatch.status === "live" && dbMatch.status === "UPCOMING" && !isStuckGroupMatch) {
       // UPCOMING → LIVE
       await prisma.match.update({
         where: { id: dbMatch.id },
@@ -77,7 +81,7 @@ async function syncMatchesToDB(apiMatches: WC2026Match[]): Promise<number> {
       console.log(`[live-sync] LIVE: ${dbMatch.teamA} vs ${dbMatch.teamB}`);
       synced++;
     } else if (
-      (apiMatch.status === "finished" || apiMatch.status === "completed") &&
+      (apiMatch.status === "finished" || apiMatch.status === "completed" || (apiMatch.status === "live" && isStuckGroupMatch)) &&
       apiMatch.home_score !== null &&
       apiMatch.away_score !== null
     ) {
@@ -95,7 +99,7 @@ async function syncMatchesToDB(apiMatches: WC2026Match[]): Promise<number> {
       if (result.count > 0) {
         await calculatePoints(dbMatch.id, scoreA, scoreB);
         console.log(
-          `[live-sync] FINISHED: ${dbMatch.teamA} ${scoreA}-${scoreB} ${dbMatch.teamB} (puntos calculados)`
+          `[live-sync] FINISHED: ${dbMatch.teamA} ${scoreA}-${scoreB} ${dbMatch.teamB} (puntos calculados${isStuckGroupMatch && apiMatch.status === "live" ? ", safety net" : ""})`
         );
         synced++;
       }

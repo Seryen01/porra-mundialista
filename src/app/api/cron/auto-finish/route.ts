@@ -181,7 +181,7 @@ export async function GET(req: Request) {
       // Si la API sigue diciendo "live" pasadas 3h del kickoff, usamos el
       // score que ya nos devuelve para cerrar el partido automáticamente.
       // Solo aplica a fase de grupos (sin prórroga ni penaltis posibles).
-      const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
+      const THREE_HOURS_MS = 120 * 60 * 1000; // 120 min — umbral seguro para fase de grupos (sin prórroga)
       const stuckGroupMatches = dbMatches.filter(
         (m) =>
           m.status === "LIVE" &&

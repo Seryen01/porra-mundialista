@@ -375,17 +375,49 @@ export default function Dashboard() {
   );
 }
 
+const avatarColors = [
+  "linear-gradient(135deg, #fbbf24, #f59e0b)",
+  "linear-gradient(135deg, #c0c0c0, #9ca3af)",
+  "linear-gradient(135deg, #cd7f32, #b45309)",
+  "linear-gradient(135deg, #8b5cf6, #7c3aed)",
+  "linear-gradient(135deg, #06b6d4, #0891b2)",
+  "linear-gradient(135deg, #ec4899, #db2777)",
+  "linear-gradient(135deg, #10b981, #059669)",
+];
+const avatarNameIndex: Record<string, number> = {};
+function getAvatarColor(name: string) {
+  if (avatarNameIndex[name] === undefined) {
+    avatarNameIndex[name] = Object.keys(avatarNameIndex).length % avatarColors.length;
+  }
+  return avatarColors[avatarNameIndex[name]];
+}
+
 function MatchCard({ match, onUpdate, liveData }: { match: Match; onUpdate: () => void; liveData?: LiveMatch | null }) {
+  const { data: session } = useSession();
+  const currentUserId = (session?.user as any)?.id as string | undefined;
   const prediction = match.predictions[0];
   const [scoreA, setScoreA] = useState(prediction?.predictedScoreA ?? "");
   const [scoreB, setScoreB] = useState(prediction?.predictedScoreB ?? "");
   const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(!prediction);
   const [error, setError] = useState<string | null>(null);
+  const [allPredictions, setAllPredictions] = useState<any[] | null>(null);
 
   const isLocked = match.status !== "UPCOMING" || new Date(match.date) < new Date();
   const hasPrediction = !!prediction;
   const isActuallyLive = liveData?.status === "live" || match.status === "LIVE";
+
+  useEffect(() => {
+    if (!isLocked) return;
+    console.log('[match-card] Match started — fetching revealed predictions', { matchId: match.id });
+    fetch(`/api/predictions?matchId=${match.id}`)
+      .then(res => res.json())
+      .then(data => {
+        console.log('[match-card] Revealed predictions loaded', { matchId: match.id, count: data.length });
+        setAllPredictions(Array.isArray(data) ? data : []);
+      })
+      .catch(err => console.error('[match-card] Failed to load predictions', err));
+  }, [isLocked, match.id]);
 
   const handleSave = async () => {
     if (scoreA === "" || scoreB === "") return;
@@ -549,6 +581,56 @@ function MatchCard({ match, onUpdate, liveData }: { match: Match; onUpdate: () =
             <div className="mc-locked-info missed">
               <Lock size={12} />
               <span>No apostaste</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Revealed predictions — visible once the match has kicked off */}
+      {isLocked && (
+        <div className="mc-predictions">
+          <div className="mc-pred-header">
+            <span className="mc-pred-title">Pronósticos</span>
+            {allPredictions !== null && (
+              <span className="mc-pred-count">{allPredictions.length}</span>
+            )}
+          </div>
+          {allPredictions === null ? (
+            <div className="mc-pred-empty">Cargando...</div>
+          ) : allPredictions.length === 0 ? (
+            <div className="mc-pred-empty">Nadie apostó en este partido</div>
+          ) : (
+            <div className="mc-pred-list">
+              {allPredictions.map((pred: any) => {
+                const isFinished = match.status === "FINISHED";
+                const isExact = isFinished && pred.predictedScoreA === match.scoreA && pred.predictedScoreB === match.scoreB;
+                const isCorrect = isFinished && pred.points > 0 && !isExact;
+                const isMiss = isFinished && pred.points === 0;
+                const isMe = pred.userId === currentUserId;
+                return (
+                  <div
+                    key={pred.id}
+                    className={`mc-pred-row${isExact ? " mc-pred-exact" : ""}${isCorrect ? " mc-pred-correct" : ""}${isMiss ? " mc-pred-miss" : ""}${isMe ? " mc-pred-me" : ""}`}
+                  >
+                    <div className="mc-pred-user">
+                      <div
+                        className="mc-pred-avatar"
+                        style={{ background: getAvatarColor(pred.user?.name ?? "?") }}
+                      >
+                        {pred.user?.image
+                          ? <img src={pred.user.image} alt="" className="mc-pred-avatar-img" />
+                          : (pred.user?.name?.[0]?.toUpperCase() ?? "?")}
+                      </div>
+                      <span className="mc-pred-name">{pred.user?.name ?? "Anónimo"}</span>
+                      {isMe && <span className="mc-pred-you">tú</span>}
+                    </div>
+                    <span className="mc-pred-score">{pred.predictedScoreA} – {pred.predictedScoreB}</span>
+                    {isExact && <span className="mc-pred-badge mc-badge-exact">⭐</span>}
+                    {isCorrect && <span className="mc-pred-badge mc-badge-correct">✓</span>}
+                    {isMiss && <span className="mc-pred-badge mc-badge-miss">✗</span>}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -888,6 +970,139 @@ function MatchCard({ match, onUpdate, liveData }: { match: Match; onUpdate: () =
         .mc-bet-hint {
           font-size: 0.7rem;
           color: var(--text-dim);
+        }
+
+        /* ── Revealed predictions section ── */
+        .mc-predictions {
+          border-top: 1px solid var(--border);
+          background: rgba(0, 0, 0, 0.12);
+        }
+        .mc-pred-header {
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
+          padding: 0.4rem 1rem;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        .mc-pred-title {
+          font-size: 0.58rem;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          color: var(--text-muted);
+        }
+        .mc-pred-count {
+          font-size: 0.58rem;
+          font-weight: 700;
+          background: rgba(255, 255, 255, 0.07);
+          color: var(--text-dim);
+          padding: 1px 6px;
+          border-radius: 8px;
+        }
+        .mc-pred-empty {
+          padding: 0.55rem 1rem;
+          font-size: 0.7rem;
+          color: var(--text-dim);
+        }
+        .mc-pred-list {
+          display: flex;
+          flex-direction: column;
+        }
+        .mc-pred-row {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.35rem 1rem;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.025);
+          transition: background 0.15s;
+        }
+        .mc-pred-row:last-child {
+          border-bottom: none;
+        }
+        .mc-pred-exact {
+          background: rgba(251, 191, 36, 0.07);
+        }
+        .mc-pred-correct {
+          background: rgba(0, 200, 83, 0.06);
+        }
+        .mc-pred-miss {
+          opacity: 0.65;
+        }
+        .mc-pred-me {
+          background: rgba(255, 255, 255, 0.035);
+        }
+        .mc-pred-user {
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
+          flex: 1;
+          min-width: 0;
+        }
+        .mc-pred-avatar {
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 0.62rem;
+          font-weight: 700;
+          color: #fff;
+          flex-shrink: 0;
+          overflow: hidden;
+        }
+        .mc-pred-avatar-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        .mc-pred-name {
+          font-size: 0.75rem;
+          color: var(--text-secondary);
+          font-weight: 500;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .mc-pred-you {
+          font-size: 0.55rem;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          color: var(--green);
+          background: rgba(0, 200, 83, 0.12);
+          border: 1px solid rgba(0, 200, 83, 0.25);
+          padding: 1px 5px;
+          border-radius: 4px;
+          flex-shrink: 0;
+        }
+        .mc-pred-score {
+          font-size: 0.78rem;
+          font-weight: 700;
+          color: var(--text-primary);
+          flex-shrink: 0;
+        }
+        .mc-pred-badge {
+          font-size: 0.6rem;
+          font-weight: 700;
+          padding: 1px 5px;
+          border-radius: 4px;
+          flex-shrink: 0;
+        }
+        .mc-badge-exact {
+          background: rgba(251, 191, 36, 0.18);
+          color: var(--gold);
+          border: 1px solid rgba(251, 191, 36, 0.35);
+        }
+        .mc-badge-correct {
+          background: rgba(0, 200, 83, 0.14);
+          color: var(--green);
+          border: 1px solid rgba(0, 200, 83, 0.3);
+        }
+        .mc-badge-miss {
+          background: rgba(239, 68, 68, 0.1);
+          color: #f87171;
+          border: 1px solid rgba(239, 68, 68, 0.2);
         }
       `}</style>
     </div>

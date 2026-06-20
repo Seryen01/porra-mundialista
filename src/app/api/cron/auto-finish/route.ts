@@ -82,15 +82,24 @@ export async function GET(req: Request) {
   // partidos activos ni inminentes (ahorra cuota de API)
   // ═══════════════════════════════════════════════════════
   const thirtyMinutesFromNow = new Date(now.getTime() + 30 * 60 * 1000);
-  const activeOrImminent = await prisma.match.count({
-    where: {
-      OR: [
-        { status: "LIVE" },
-        { status: "PENDING" },
-        { status: "UPCOMING", date: { lte: thirtyMinutesFromNow } },
-      ],
-    },
-  });
+  let activeOrImminent: number;
+  try {
+    activeOrImminent = await prisma.match.count({
+      where: {
+        OR: [
+          { status: "LIVE" },
+          { status: "PENDING" },
+          { status: "UPCOMING", date: { lte: thirtyMinutesFromNow } },
+        ],
+      },
+    });
+  } catch (dbError) {
+    console.error("[cron-auto-finish] DB unreachable during guard check", dbError);
+    return NextResponse.json(
+      { success: false, error: "Database unreachable", timestamp: now.toISOString() },
+      { status: 503 }
+    );
+  }
 
   if (activeOrImminent === 0) {
     console.log("[cron-auto-finish] SKIP — sin partidos activos ni inminentes", {

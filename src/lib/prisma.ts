@@ -7,7 +7,8 @@ function buildDatasourceUrl(): string | undefined {
   if (!url || process.env.NODE_ENV !== "production") return undefined;
   // Limit to 1 connection per serverless instance to avoid exhausting Neon's pool
   if (url.includes("connection_limit")) return url;
-  return `${url}${url.includes("?") ? "&" : "?"}connection_limit=1&pool_timeout=10`;
+  // connect_timeout=30 gives Neon free tier time to wake from auto-suspend
+  return `${url}${url.includes("?") ? "&" : "?"}connection_limit=1&pool_timeout=10&connect_timeout=30`;
 }
 
 export const prisma =

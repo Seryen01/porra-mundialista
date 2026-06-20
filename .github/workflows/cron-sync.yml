@@ -21,6 +21,10 @@ jobs:
 
           echo "HTTP status: $STATUS"
 
+          if [ "$STATUS" -eq 503 ]; then
+            echo "Base de datos no disponible (503) — se reintentará en el próximo ciclo"
+            exit 0
+          fi
           if [ "$STATUS" -ne 200 ]; then
             echo "Error: el endpoint devolvió HTTP $STATUS"
             exit 1

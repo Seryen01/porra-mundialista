@@ -64,16 +64,21 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Match ID required" }, { status: 400 });
   }
 
+  console.log('[predictions] GET request', { matchId, userId: (session.user as any).id });
+
   const match = await prisma.match.findUnique({
     where: { id: matchId },
   });
 
   if (!match) {
+    console.warn('[predictions] Match not found', { matchId });
     return NextResponse.json({ error: "Match not found" }, { status: 404 });
   }
 
   const now = new Date();
   const isRevealed = match.status !== "UPCOMING" || match.date < now;
+
+  console.log('[predictions] Visibility check', { matchId, status: match.status, matchDate: match.date, isRevealed });
 
   if (!isRevealed) {
     // Only return the user's own prediction
@@ -85,6 +90,7 @@ export async function GET(req: Request) {
         },
       },
     });
+    console.log('[predictions] Match not started — returning own prediction only', { hasPrediction: !!prediction });
     return NextResponse.json(prediction ? [prediction] : []);
   }
 
@@ -93,10 +99,12 @@ export async function GET(req: Request) {
     where: { matchId },
     include: {
       user: {
-        select: { name: true },
+        select: { name: true, image: true },
       },
     },
+    orderBy: { points: "desc" },
   });
 
+  console.log('[predictions] Match started — returning all predictions', { matchId, count: predictions.length });
   return NextResponse.json(predictions);
 }

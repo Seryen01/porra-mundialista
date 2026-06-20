@@ -82,14 +82,24 @@ export async function GET(req: Request) {
   // partidos activos ni inminentes (ahorra cuota de API)
   // ═══════════════════════════════════════════════════════
   const thirtyMinutesFromNow = new Date(now.getTime() + 30 * 60 * 1000);
-  const activeOrImminent = await prisma.match.count({
-    where: {
-      OR: [
-        { status: "LIVE" },
-        { status: "UPCOMING", date: { lte: thirtyMinutesFromNow } },
-      ],
-    },
-  });
+  let activeOrImminent: number;
+  try {
+    activeOrImminent = await prisma.match.count({
+      where: {
+        OR: [
+          { status: "LIVE" },
+          { status: "PENDING" },
+          { status: "UPCOMING", date: { lte: thirtyMinutesFromNow } },
+        ],
+      },
+    });
+  } catch (dbError) {
+    console.error("[cron-auto-finish] DB unreachable during guard check", dbError);
+    return NextResponse.json(
+      { success: false, error: "Database unreachable", timestamp: now.toISOString() },
+      { status: 503 }
+    );
+  }
 
   if (activeOrImminent === 0) {
     console.log("[cron-auto-finish] SKIP — sin partidos activos ni inminentes", {
@@ -182,9 +192,19 @@ export async function GET(req: Request) {
       // score que ya nos devuelve para cerrar el partido automáticamente.
       // Solo aplica a fase de grupos (sin prórroga ni penaltis posibles).
       const THREE_HOURS_MS = 120 * 60 * 1000; // 120 min — umbral seguro para fase de grupos (sin prórroga)
-      const stuckGroupMatches = dbMatches.filter(
+      const liveOrPendingMatches = dbMatches.filter((m) => m.status === "LIVE" || m.status === "PENDING");
+      console.log("[cron-auto-finish] DIAG — partidos LIVE/PENDING en BD", liveOrPendingMatches.map((m) => ({
+        teams: `${m.teamA} vs ${m.teamB}`,
+        status: m.status,
+        phase: m.phase,
+        date: m.date.toISOString(),
+        ageMinutes: Math.round((now.getTime() - m.date.getTime()) / 60000),
+        phaseHasGrupo: m.phase.toLowerCase().includes("grupo"),
+        over120min: now.getTime() - m.date.getTime() > THREE_HOURS_MS,
+      })));
+
+      const stuckGroupMatches = liveOrPendingMatches.filter(
         (m) =>
-          m.status === "LIVE" &&
           m.phase.toLowerCase().includes("grupo") &&
           now.getTime() - m.date.getTime() > THREE_HOURS_MS
       );

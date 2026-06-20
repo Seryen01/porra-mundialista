@@ -4,21 +4,29 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
 export async function GET() {
+  console.log('[matches-api] GET /api/matches called');
   const session = await getServerSession(authOptions);
   if (!session) {
+    console.warn('[matches-api] Unauthorized — no session');
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const matches = await prisma.match.findMany({
-    orderBy: { date: "asc" },
-    include: {
-      predictions: {
-        where: { userId: (session.user as any).id },
+  try {
+    const matches = await prisma.match.findMany({
+      orderBy: { date: "asc" },
+      include: {
+        predictions: {
+          where: { userId: (session.user as any).id },
+        },
       },
-    },
-  });
+    });
 
-  return NextResponse.json(matches);
+    console.log('[matches-api] Query OK', { count: matches.length, userId: (session.user as any).id });
+    return NextResponse.json(matches);
+  } catch (error) {
+    console.error('[matches-api] DB query failed', error);
+    return NextResponse.json({ error: "Error al cargar los partidos" }, { status: 500 });
+  }
 }
 
 export async function POST(req: Request) {

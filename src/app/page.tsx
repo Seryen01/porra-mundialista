@@ -31,12 +31,29 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [expandedDates, setExpandedDates] = useState<Record<string, boolean>>({});
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const fetchMatches = async () => {
-    const res = await fetch("/api/matches");
-    const data = await res.json();
-    setMatches(data);
-    setLoading(false);
+    try {
+      console.log('[dashboard] fetchMatches called');
+      const res = await fetch("/api/matches");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        console.error('[dashboard] fetchMatches error response', { status: res.status, errData });
+        setFetchError("No se pudieron cargar los partidos. Intenta recargar la página.");
+        setLoading(false);
+        return;
+      }
+      const data = await res.json();
+      console.log('[dashboard] fetchMatches OK', { count: data.length });
+      setMatches(data);
+      setFetchError(null);
+    } catch (error) {
+      console.error('[dashboard] fetchMatches network error', error);
+      setFetchError("Error de conexión. Comprueba tu red e intenta de nuevo.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const { getLiveDataForMatch, hasLive } = useLiveScores(fetchMatches);
@@ -54,8 +71,15 @@ export default function Dashboard() {
     } else if (status === "authenticated") {
       fetchMatches();
       fetch("/api/profile")
-        .then(res => res.json())
-        .then(data => setUserData(data));
+        .then(res => {
+          if (!res.ok) {
+            console.warn('[dashboard] profile fetch failed', { status: res.status });
+            return null;
+          }
+          return res.json();
+        })
+        .then(data => { if (data) setUserData(data); })
+        .catch(err => console.error('[dashboard] profile fetch error', err));
     }
   }, [status]);
 
@@ -64,6 +88,21 @@ export default function Dashboard() {
       <div className="loading-screen">
         <div className="spinner" />
         <span>Cargando partidos...</span>
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="loading-screen">
+        <span style={{ fontSize: "2rem" }}>⚠️</span>
+        <span style={{ color: "var(--text-secondary)", textAlign: "center", padding: "0 1.5rem" }}>{fetchError}</span>
+        <button
+          onClick={() => { setLoading(true); setFetchError(null); fetchMatches(); }}
+          style={{ marginTop: "1rem", padding: "0.6rem 1.5rem", borderRadius: "8px", background: "var(--green)", color: "#000", fontWeight: 700, border: "none", cursor: "pointer" }}
+        >
+          Reintentar
+        </button>
       </div>
     );
   }

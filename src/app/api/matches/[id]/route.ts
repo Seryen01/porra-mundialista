@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { calculatePoints } from "@/lib/scoring";
+export const dynamic = "force-dynamic";
 
 export async function PATCH(
   req: Request,

@@ -4,6 +4,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getWC2026Matches, normalizeTeamName } from "@/lib/wc2026";
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {

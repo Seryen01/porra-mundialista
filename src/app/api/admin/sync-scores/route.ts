@@ -17,6 +17,7 @@ import {
   isMatchReversed,
 } from "@/lib/wc2026";
 import { cacheDelete } from "@/lib/cache";
+export const dynamic = "force-dynamic";
 
 // Fases eliminatorias tal como están en la BD
 const KNOCKOUT_PHASES = ["Dieciseisavos", "Octavos", "Cuartos", "Semis", "Final", "Tercer y cuarto puesto"];

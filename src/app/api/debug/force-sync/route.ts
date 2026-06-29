@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { calculatePoints } from "@/lib/scoring";
 import { getWC2026Matches, normalizeTeamName, findMatchInList, isMatchReversed } from "@/lib/wc2026";
 import { cacheDelete } from "@/lib/cache";
+export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   console.log("[force-sync] Iniciando sincronización forzada...");

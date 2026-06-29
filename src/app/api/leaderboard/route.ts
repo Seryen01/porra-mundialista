@@ -33,5 +33,7 @@ export async function GET() {
 
   const allFinished = totalMatches > 0 && totalMatches === finishedMatches;
 
-  return NextResponse.json({ users: leaderboard, allFinished });
+  return NextResponse.json({ users: leaderboard, allFinished }, {
+    headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120" },
+  });
 }

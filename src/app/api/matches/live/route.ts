@@ -159,7 +159,10 @@ export async function GET() {
   // Feature flag
   if (process.env.LIVE_SCORES_ENABLED !== "true") {
     console.log("[live] Feature flag LIVE_SCORES_ENABLED desactivado");
-    return NextResponse.json({ enabled: false, matches: [], syncedCount: 0 });
+    return NextResponse.json(
+      { enabled: false, matches: [], syncedCount: 0 },
+      { headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" } }
+    );
   }
 
   // ── Antes de devolver caché, comprobar si hay partidos bloqueados ──
@@ -180,7 +183,9 @@ export async function GET() {
   if (stuckCount === 0) {
     const cached = cacheGet<LiveResponse>(RESPONSE_CACHE_KEY);
     if (cached) {
-      return NextResponse.json(cached);
+      return NextResponse.json(cached, {
+        headers: { "Cache-Control": "public, s-maxage=55, stale-while-revalidate=60" },
+      });
     }
   }
 
@@ -228,17 +233,22 @@ export async function GET() {
     };
 
     cacheSet(RESPONSE_CACHE_KEY, response, RESPONSE_CACHE_TTL);
-    return NextResponse.json(response);
+    return NextResponse.json(response, {
+      headers: { "Cache-Control": "public, s-maxage=55, stale-while-revalidate=60" },
+    });
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error("[live] Error:", msg);
     // Responder sin matches — la app usa datos manuales de BD
-    return NextResponse.json({
-      enabled: true,
-      matches: [],
-      syncedCount: 0,
-      updatedAt: new Date().toISOString(),
-      error: "API temporalmente no disponible",
-    });
+    return NextResponse.json(
+      {
+        enabled: true,
+        matches: [],
+        syncedCount: 0,
+        updatedAt: new Date().toISOString(),
+        error: "API temporalmente no disponible",
+      },
+      { headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60" } }
+    );
   }
 }

@@ -50,14 +50,29 @@ export default function Historico() {
   const router = useRouter();
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (status === "unauthenticated") router.push("/login");
-    else if (status === "authenticated") {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    } else if (status === "authenticated") {
+      console.log("[historico] Fetching match history");
       fetch("/api/historico")
-        .then(r => r.json())
-        .then(data => { setMatches(data); setLoading(false); });
+        .then(r => {
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          return r.json();
+        })
+        .then(data => {
+          console.log("[historico] Matches loaded", { count: data.length });
+          setMatches(data);
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error("[historico] Failed to load matches", err);
+          setError(true);
+          setLoading(false);
+        });
     }
   }, [status]);
 
@@ -66,6 +81,14 @@ export default function Historico() {
       <div className="loading-screen">
         <div className="spinner" />
         <span>Cargando histórico...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="loading-screen">
+        <span>No se pudo cargar el histórico. Inténtalo de nuevo.</span>
       </div>
     );
   }
@@ -218,14 +241,14 @@ function HistoricoCard({ match, index, onShowImage }: { match: Match; index: num
             return (
               <div key={pred.id} className={`pred-row ${isExact ? 'exact' : ''} ${isCorrectResult ? 'correct' : ''} ${pred.points === 0 ? 'miss' : ''}`}>
                 <div className="pred-user">
-                  <div 
-                    className="pred-avatar" 
-                    style={{ background: getAvatarColor(pred.user.name), cursor: pred.user.image ? 'pointer' : 'default' }}
+                  <div
+                    className="pred-avatar"
+                    style={{ background: getAvatarColor(pred.user.name ?? '?'), cursor: pred.user.image ? 'pointer' : 'default' }}
                     onClick={() => pred.user.image && onShowImage(pred.user.image)}
                   >
-                    {pred.user.image ? <img src={pred.user.image} alt="" className="pred-avatar-img" /> : pred.user.name[0]}
+                    {pred.user.image ? <img src={pred.user.image} alt="" className="pred-avatar-img" /> : (pred.user.name?.[0] ?? '?')}
                   </div>
-                  <span className="pred-name">{pred.user.name}</span>
+                  <span className="pred-name">{pred.user.name ?? 'Usuario'}</span>
                 </div>
                 <div className="pred-bet">
                   <span className="pred-score">{pred.predictedScoreA} – {pred.predictedScoreB}</span>

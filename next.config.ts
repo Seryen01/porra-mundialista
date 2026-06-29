@@ -4,7 +4,7 @@ import withPWAInit from "next-pwa";
 // disable PWA in Vercel's build environment to avoid path argument errors.
 const withPWA = withPWAInit({
   dest: "public",
-  disable: process.env.NODE_ENV === "development" || !!process.env.VERCEL || !!process.env.NETLIFY,
+  disable: process.env.NODE_ENV === "development" || !!process.env.VERCEL || !!process.env.NETLIFY || !!process.env.RAILWAY_ENVIRONMENT,
   register: true,
   skipWaiting: true,
 });

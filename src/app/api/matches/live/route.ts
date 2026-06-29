@@ -168,12 +168,17 @@ export async function GET() {
   // ── Antes de devolver caché, comprobar si hay partidos bloqueados ──
   // Si hay partidos LIVE/PENDING en BD con >120 min de antigüedad,
   // invalidamos el caché para forzar un nuevo sync.
-  const stuckCount = await prisma.match.count({
-    where: {
-      status: { in: ["LIVE", "PENDING"] },
-      date: { lt: new Date(Date.now() - 120 * 60 * 1000) },
-    },
-  });
+  let stuckCount = 0;
+  try {
+    stuckCount = await prisma.match.count({
+      where: {
+        status: { in: ["LIVE", "PENDING"] },
+        date: { lt: new Date(Date.now() - 120 * 60 * 1000) },
+      },
+    });
+  } catch (err) {
+    console.warn("[live] No se pudo comprobar partidos bloqueados", err);
+  }
 
   if (stuckCount > 0) {
     console.log("[live] Partidos bloqueados detectados, forzando sync", { stuckCount });

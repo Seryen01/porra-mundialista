@@ -11,7 +11,6 @@ const withPWA = withPWAInit({
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: (process.env.RAILWAY_ENVIRONMENT ? "standalone" : undefined) as "standalone" | undefined,
   async headers() {
     return [
       {

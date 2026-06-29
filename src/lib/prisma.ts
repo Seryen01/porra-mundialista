@@ -4,6 +4,12 @@ const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
 function buildDatasourceUrl(): string | undefined {
   const url = process.env.DATABASE_URL;
+  // During `next build` there is no real DB — return a dummy URL so PrismaClient
+  // instantiates without throwing "Environment variable not found: DATABASE_URL".
+  // Queries made at build time will fail gracefully (caught in each route).
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return url ?? "postgresql://build:build@localhost:5432/build";
+  }
   if (!url || process.env.NODE_ENV !== "production") return undefined;
   // Limit to 1 connection per serverless instance to avoid exhausting Neon's pool
   if (url.includes("connection_limit")) return url;

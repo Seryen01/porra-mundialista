@@ -4,19 +4,29 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const [users, totalMatches, finishedMatches] = await Promise.all([
-    prisma.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        image: true,
-        predictions: { select: { points: true } },
-        bonus: { select: { points: true } },
-      },
-    }),
-    prisma.match.count(),
-    prisma.match.count({ where: { status: "FINISHED" } }),
-  ]);
+  console.log("[leaderboard] GET request");
+  let users: { id: string; name: string | null; image: string | null; predictions: { points: number }[]; bonus: { points: number } | null }[];
+  let totalMatches: number;
+  let finishedMatches: number;
+  try {
+    [users, totalMatches, finishedMatches] = await Promise.all([
+      prisma.user.findMany({
+        select: {
+          id: true,
+          name: true,
+          image: true,
+          predictions: { select: { points: true } },
+          bonus: { select: { points: true } },
+        },
+      }),
+      prisma.match.count(),
+      prisma.match.count({ where: { status: "FINISHED" } }),
+    ]);
+    console.log("[leaderboard] Query OK", { users: users.length, totalMatches, finishedMatches });
+  } catch (error) {
+    console.error("[leaderboard] DB query failed", error);
+    return NextResponse.json({ error: "Error al cargar la clasificación" }, { status: 500 });
+  }
 
   const leaderboard = users.map((user) => {
     const matchPoints = user.predictions.reduce((sum, p) => sum + p.points, 0);

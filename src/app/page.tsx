@@ -8,7 +8,6 @@ import { es } from "date-fns/locale";
 import { getFlagUrl, getCode } from "@/lib/flags";
 import { TOURNAMENT_START } from "@/lib/config";
 import { Lock, Check, Pencil, ChevronDown, ChevronUp } from "lucide-react";
-import { useLiveScores, type LiveMatch } from "@/hooks/useLiveScores";
 
 interface Match {
   id: string;
@@ -55,8 +54,6 @@ export default function Dashboard() {
       setLoading(false);
     }
   };
-
-  const { getLiveDataForMatch, hasLive } = useLiveScores(fetchMatches);
 
   const toggleDate = (date: string) => {
     setExpandedDates(prev => ({
@@ -207,7 +204,7 @@ export default function Dashboard() {
               {expandedDates[date] && (
                 <div className="matches-list animate-in">
                   {dateMatches.map((match) => (
-                    <MatchCard key={match.id} match={match} onUpdate={fetchMatches} liveData={getLiveDataForMatch(match.teamA, match.teamB)} />
+                    <MatchCard key={match.id} match={match} onUpdate={fetchMatches} />
                   ))}
                 </div>
               )}
@@ -431,7 +428,7 @@ function getAvatarColor(name: string) {
   return avatarColors[avatarNameIndex[name]];
 }
 
-function MatchCard({ match, onUpdate, liveData }: { match: Match; onUpdate: () => void; liveData?: LiveMatch | null }) {
+function MatchCard({ match, onUpdate }: { match: Match; onUpdate: () => void }) {
   const { data: session } = useSession();
   const currentUserId = (session?.user as any)?.id as string | undefined;
   const prediction = match.predictions[0];
@@ -444,7 +441,7 @@ function MatchCard({ match, onUpdate, liveData }: { match: Match; onUpdate: () =
 
   const isLocked = match.status !== "UPCOMING" || new Date(match.date) < new Date();
   const hasPrediction = !!prediction;
-  const isActuallyLive = liveData?.status === "live" || match.status === "LIVE";
+  const isActuallyLive = match.status === "LIVE";
 
   useEffect(() => {
     if (!isLocked) return;
@@ -497,9 +494,6 @@ function MatchCard({ match, onUpdate, liveData }: { match: Match; onUpdate: () =
             <span className="live-badge">
               <span className="live-dot" />
               EN DIRECTO
-              {liveData?.homeScore !== null && liveData?.homeScore !== undefined
-                ? ` · ${liveData.homeScore}-${liveData.awayScore}`
-                : ""}
             </span>
           )}
           <span className="mc-time">{format(new Date(match.date), "HH:mm")}</span>
@@ -596,20 +590,10 @@ function MatchCard({ match, onUpdate, liveData }: { match: Match; onUpdate: () =
                 {hasPrediction && ` · Tu apuesta: ${prediction.predictedScoreA} – ${prediction.predictedScoreB}`}
               </span>
             </div>
-          ) : isActuallyLive && liveData ? (
-            <div className="mc-live-bar">
-              <div className="mc-live-score">
-                <span className="live-dot-sm" />
-                <strong>
-                  {liveData.homeScore ?? "–"} – {liveData.awayScore ?? "–"}
-                </strong>
-                <span className="mc-live-label">en directo</span>
-              </div>
-              {hasPrediction && (
-                <span className="mc-bet-hint">
-                  Tu apuesta: {prediction.predictedScoreA}–{prediction.predictedScoreB}
-                </span>
-              )}
+          ) : isActuallyLive ? (
+            <div className="mc-locked-info" style={{ color: '#f87171' }}>
+              <span className="live-dot-sm" />
+              <span>En directo{hasPrediction ? ` · Tu apuesta: ${prediction.predictedScoreA}–${prediction.predictedScoreB}` : ""}</span>
             </div>
           ) : hasPrediction ? (
             <div className="mc-locked-info">

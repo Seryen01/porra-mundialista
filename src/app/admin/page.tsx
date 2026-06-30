@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { getFlagUrl, getCode, countryNames } from "@/lib/flags";
-import { Plus, Check, Zap, Trash2, Edit2, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Check, Trash2, Edit2, X, ChevronDown, ChevronUp } from "lucide-react";
 
 export default function AdminPage() {
   const { data: session } = useSession();
@@ -66,17 +66,6 @@ export default function AdminPage() {
     fetchMatches();
   };
 
-  const handleForceAutoFinish = async () => {
-    if (!confirm("Ejecutará el Scheduler: sincroniza estados con la WC2026 API y calcula puntos de los partidos terminados. ¿Continuar?")) return;
-
-    setLoading(true);
-    const res = await fetch("/api/cron/auto-finish");
-    const data = await res.json();
-    const source = data.syncedFromApi ? "WC2026 API" : "lógica temporal";
-    const detail = data.logs?.slice(0, 5).join("\n") || "Sin cambios";
-    alert(`Scheduler completado (${source}).\nPartidos actualizados: ${data.changedCount}\n\n${detail}`);
-    fetchMatches();
-  };
 
   if (loading) {
     return (
@@ -92,9 +81,6 @@ export default function AdminPage() {
       <header className="admin-header">
         <h1>⚙️ Admin</h1>
         <div className="admin-actions">
-          <button className="cron-btn" onClick={handleForceAutoFinish} title="Ejecutar Tarea Automática">
-            <Zap size={16} /> Scheduler
-          </button>
           <button className="toggle-form-btn" onClick={() => setShowForm(!showForm)}>
             <Plus size={18} />
             Nuevo
@@ -155,18 +141,6 @@ export default function AdminPage() {
         .admin-actions {
           display: flex;
           gap: 0.5rem;
-        }
-        .cron-btn {
-          display: flex;
-          align-items: center;
-          gap: 0.4rem;
-          background: rgba(251, 191, 36, 0.15);
-          color: #fbbf24;
-          padding: 0.5rem 1rem;
-          border-radius: 8px;
-          border: 1px solid rgba(251, 191, 36, 0.3);
-          font-weight: 700;
-          font-size: 0.8rem;
         }
         .toggle-form-btn {
           display: flex;

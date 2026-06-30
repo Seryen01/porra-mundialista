@@ -4,9 +4,6 @@
 const REQUIRED_ENV = [
   "DATABASE_URL",
   "NEXTAUTH_SECRET",
-  "WC2026_API_KEY",
-  "CRON_SECRET",
-  "LIVE_SCORES_ENABLED",
 ] as const;
 
 export function validateEnv(): void {
@@ -18,9 +15,8 @@ export function validateEnv(): void {
     throw new Error(msg);
   }
 
-  console.log("[env] Todas las variables de entorno requeridas están configuradas", {
-    hasApiKey: !!process.env.WC2026_API_KEY,
+  console.log("[env] Variables de entorno OK", {
     hasDb: !!process.env.DATABASE_URL,
-    liveScoresEnabled: process.env.LIVE_SCORES_ENABLED,
+    hasSecret: !!process.env.NEXTAUTH_SECRET,
   });
 }

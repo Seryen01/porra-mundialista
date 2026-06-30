@@ -9,19 +9,29 @@ const CACHE_KEY = "historico:matches";
 const CACHE_TTL_SECONDS = 120;
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
+  console.log("[historico] GET start");
+
+  let session;
+  try {
+    session = await getServerSession(authOptions);
+  } catch (error) {
+    console.error("[historico] getServerSession threw", error);
+    return NextResponse.json({ error: "Auth error" }, { status: 500 });
+  }
+
   if (!session) {
-    console.log("[historico] Unauthorized request — no session");
+    console.log("[historico] Unauthorized — no session");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  console.log("[historico] Session OK, checking cache");
 
   const cached = cacheGet<object[]>(CACHE_KEY);
   if (cached) {
-    console.log("[historico] Cache hit — returning cached matches", { count: cached.length });
+    console.log("[historico] Cache hit", { count: cached.length });
     return NextResponse.json(cached);
   }
 
-  console.log("[historico] Cache miss — querying DB for finished matches");
+  console.log("[historico] Cache miss — querying DB");
   try {
     const matches = await prisma.match.findMany({
       where: { status: "FINISHED" },
@@ -47,7 +57,7 @@ export async function GET() {
       },
     });
 
-    console.log("[historico] DB query complete", { matchCount: matches.length });
+    console.log("[historico] DB query OK", { matchCount: matches.length });
     cacheSet(CACHE_KEY, matches, CACHE_TTL_SECONDS);
     return NextResponse.json(matches);
   } catch (error) {

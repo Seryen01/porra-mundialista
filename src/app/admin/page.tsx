@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { getFlagUrl, getCode, countryNames } from "@/lib/flags";
-import { Plus, Check, Trash2, Edit2, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Check, Zap, Trash2, Edit2, X, ChevronDown, ChevronUp } from "lucide-react";
 
 export default function AdminPage() {
   const { data: session } = useSession();

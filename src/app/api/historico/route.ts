@@ -44,16 +44,7 @@ export async function GET() {
         phase: true,
         scoreA: true,
         scoreB: true,
-        predictions: {
-          select: {
-            id: true,
-            predictedScoreA: true,
-            predictedScoreB: true,
-            points: true,
-            user: { select: { id: true, name: true, image: true } },
-          },
-          orderBy: { points: "desc" },
-        },
+        _count: { select: { predictions: true } },
       },
     });
 

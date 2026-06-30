@@ -18,25 +18,22 @@ export const authOptions: AuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email },
+          });
 
-        if (!user) return null;
+          if (!user) return null;
 
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
+          const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
+          if (!isPasswordValid) return null;
 
-        if (!isPasswordValid) return null;
-
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        };
+          console.log('[auth] Login OK', { userId: user.id });
+          return { id: user.id, name: user.name, email: user.email, role: user.role };
+        } catch (error) {
+          console.error('[auth] authorize DB error', error);
+          return null; // returning null shows "invalid credentials" — safer than throwing
+        }
       },
     }),
   ],

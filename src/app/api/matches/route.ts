@@ -7,7 +7,13 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   console.log('[matches-api] GET /api/matches called');
-  const session = await getServerSession(authOptions);
+  let session;
+  try {
+    session = await getServerSession(authOptions);
+  } catch (error) {
+    console.error('[matches-api] getServerSession error', error);
+    return NextResponse.json({ error: "Auth error" }, { status: 500 });
+  }
   if (!session) {
     console.warn('[matches-api] Unauthorized — no session');
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -32,7 +38,13 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
+  let session;
+  try {
+    session = await getServerSession(authOptions);
+  } catch (error) {
+    console.error('[matches-api] POST getServerSession error', error);
+    return NextResponse.json({ error: "Auth error" }, { status: 500 });
+  }
   if (!session || (session.user as any).role !== "ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -44,14 +56,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Datos de partido inválidos" }, { status: 400 });
   }
 
-  const match = await prisma.match.create({
-    data: {
-      teamA,
-      teamB,
-      date: new Date(date),
-      phase,
-    },
-  });
-
-  return NextResponse.json(match);
+  try {
+    const match = await prisma.match.create({
+      data: { teamA, teamB, date: new Date(date), phase },
+    });
+    console.log('[matches-api] Match created', { id: match.id, teamA, teamB });
+    return NextResponse.json(match);
+  } catch (error) {
+    console.error('[matches-api] POST create failed', error);
+    return NextResponse.json({ error: "Error al crear el partido" }, { status: 500 });
+  }
 }

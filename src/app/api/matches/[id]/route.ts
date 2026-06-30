@@ -9,7 +9,11 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions);
+  let session;
+  try { session = await getServerSession(authOptions); } catch (e) {
+    console.error('[matches/id] PATCH getServerSession error', e);
+    return NextResponse.json({ error: "Auth error" }, { status: 500 });
+  }
   if (!session || (session.user as any).role !== "ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -71,7 +75,11 @@ export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions);
+  let session;
+  try { session = await getServerSession(authOptions); } catch (e) {
+    console.error('[matches/id] DELETE getServerSession error', e);
+    return NextResponse.json({ error: "Auth error" }, { status: 500 });
+  }
   if (!session || (session.user as any).role !== "ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }

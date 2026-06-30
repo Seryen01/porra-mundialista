@@ -40,35 +40,42 @@ export async function calculatePoints(
   scoreA: number,
   scoreB: number
 ) {
-  const match = await prisma.match.findUnique({ where: { id: matchId } });
-  if (!match) return;
-
-  const { exact: baseExact, outcome: baseOutcome } = getPhasePoints(match.phase);
-  const multiplier = match.isStarMatch ? 2 : 1;
-
-  const pointsExact   = baseExact   * multiplier;
-  const pointsOutcome = baseOutcome * multiplier;
-
-  const realOutcome = scoreA > scoreB ? "1" : scoreA < scoreB ? "2" : "X";
-
-  const predictions = await prisma.prediction.findMany({ where: { matchId } });
-  console.log(`[scoring] Calculando puntos para ${predictions.length} predicciones del partido ${matchId}`);
-
-  const updates = predictions.map((prediction) => {
-    const predA = prediction.predictedScoreA;
-    const predB = prediction.predictedScoreB;
-    const predOutcome = predA > predB ? "1" : predA < predB ? "2" : "X";
-
-    let points = 0;
-    if (predA === scoreA && predB === scoreB) {
-      points = pointsExact;
-    } else if (predOutcome === realOutcome) {
-      points = pointsOutcome;
+  console.log('[scoring] calculatePoints start', { matchId, scoreA, scoreB });
+  try {
+    const match = await prisma.match.findUnique({ where: { id: matchId } });
+    if (!match) {
+      console.warn('[scoring] Match not found', { matchId });
+      return;
     }
 
-    return prisma.prediction.update({ where: { id: prediction.id }, data: { points } });
-  });
+    const { exact: baseExact, outcome: baseOutcome } = getPhasePoints(match.phase);
+    const multiplier = match.isStarMatch ? 2 : 1;
+    const pointsExact   = baseExact   * multiplier;
+    const pointsOutcome = baseOutcome * multiplier;
+    const realOutcome = scoreA > scoreB ? "1" : scoreA < scoreB ? "2" : "X";
 
-  await prisma.$transaction(updates);
-  console.log(`[scoring] Puntos calculados correctamente para ${updates.length} predicciones`);
+    const predictions = await prisma.prediction.findMany({ where: { matchId } });
+    console.log(`[scoring] ${predictions.length} predicciones para partido ${matchId}`);
+
+    const updates = predictions.map((prediction) => {
+      const predA = prediction.predictedScoreA;
+      const predB = prediction.predictedScoreB;
+      const predOutcome = predA > predB ? "1" : predA < predB ? "2" : "X";
+
+      let points = 0;
+      if (predA === scoreA && predB === scoreB) {
+        points = pointsExact;
+      } else if (predOutcome === realOutcome) {
+        points = pointsOutcome;
+      }
+
+      return prisma.prediction.update({ where: { id: prediction.id }, data: { points } });
+    });
+
+    await prisma.$transaction(updates);
+    console.log(`[scoring] Puntos calculados OK — ${updates.length} predicciones actualizadas`);
+  } catch (error) {
+    console.error('[scoring] calculatePoints failed', error);
+    throw error; // re-throw so the caller (admin PATCH) can return 500
+  }
 }

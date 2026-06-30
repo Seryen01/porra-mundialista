@@ -47,19 +47,24 @@ export async function PATCH(
     }
   }
 
-  const match = await prisma.match.update({
-    where: { id },
-    data: dataToUpdate,
-  });
+  try {
+    const match = await prisma.match.update({
+      where: { id },
+      data: dataToUpdate,
+    });
 
-  const finalScoreA = scoreA === "" || scoreA === null ? null : parseInt(scoreA as string);
-  const finalScoreB = scoreB === "" || scoreB === null ? null : parseInt(scoreB as string);
+    const finalScoreA = scoreA === "" || scoreA === null ? null : parseInt(scoreA as string);
+    const finalScoreB = scoreB === "" || scoreB === null ? null : parseInt(scoreB as string);
 
-  if (status === "FINISHED" && finalScoreA !== null && finalScoreB !== null && !isNaN(finalScoreA) && !isNaN(finalScoreB)) {
-    await calculatePoints(id, finalScoreA, finalScoreB);
+    if (status === "FINISHED" && finalScoreA !== null && finalScoreB !== null && !isNaN(finalScoreA) && !isNaN(finalScoreB)) {
+      await calculatePoints(id, finalScoreA, finalScoreB);
+    }
+
+    return NextResponse.json(match);
+  } catch (error) {
+    console.error('[matches/id] PATCH error', error);
+    return NextResponse.json({ error: "Error al actualizar partido" }, { status: 500 });
   }
-
-  return NextResponse.json(match);
 }
 
 export async function DELETE(
@@ -73,10 +78,11 @@ export async function DELETE(
 
   const { id } = await params;
 
-  // Since we added onDelete: Cascade, this will also delete associated predictions.
-  await prisma.match.delete({
-    where: { id },
-  });
-
-  return NextResponse.json({ success: true });
+  try {
+    await prisma.match.delete({ where: { id } });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('[matches/id] DELETE error', error);
+    return NextResponse.json({ error: "Error al eliminar partido" }, { status: 500 });
+  }
 }

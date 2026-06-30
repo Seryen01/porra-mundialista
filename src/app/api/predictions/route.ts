@@ -19,37 +19,29 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Puntuaciones inválidas" }, { status: 400 });
   }
 
-  const match = await prisma.match.findUnique({
-    where: { id: matchId },
-  });
+  try {
+    const match = await prisma.match.findUnique({ where: { id: matchId } });
 
-  if (!match) {
-    return NextResponse.json({ error: "Match not found" }, { status: 404 });
+    if (!match) {
+      return NextResponse.json({ error: "Match not found" }, { status: 404 });
+    }
+
+    const now = new Date();
+    if (match.status !== "UPCOMING" || match.date < now) {
+      return NextResponse.json({ error: "Match already started or finished" }, { status: 400 });
+    }
+
+    const prediction = await prisma.prediction.upsert({
+      where: { userId_matchId: { userId, matchId } },
+      update: { predictedScoreA: parseInt(scoreA), predictedScoreB: parseInt(scoreB) },
+      create: { userId, matchId, predictedScoreA: parseInt(scoreA), predictedScoreB: parseInt(scoreB) },
+    });
+
+    return NextResponse.json(prediction);
+  } catch (error) {
+    console.error('[predictions] POST DB error', error);
+    return NextResponse.json({ error: "Error al guardar predicción" }, { status: 500 });
   }
-
-  // Lock check
-  const now = new Date();
-  if (match.status !== "UPCOMING" || match.date < now) {
-    return NextResponse.json({ error: "Match already started or finished" }, { status: 400 });
-  }
-
-  const prediction = await prisma.prediction.upsert({
-    where: {
-      userId_matchId: { userId, matchId },
-    },
-    update: {
-      predictedScoreA: parseInt(scoreA),
-      predictedScoreB: parseInt(scoreB),
-    },
-    create: {
-      userId,
-      matchId,
-      predictedScoreA: parseInt(scoreA),
-      predictedScoreB: parseInt(scoreB),
-    },
-  });
-
-  return NextResponse.json(prediction);
 }
 
 // GET all predictions for a specific match (revealed only if match started)

@@ -12,14 +12,18 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const bonus = await prisma.userBonus.findUnique({
-    where: { userId: (session.user as any).id }
-  });
-
   const isLocked = new Date() >= TOURNAMENT_START;
   console.log('[bonus] GET - isLocked:', isLocked, 'now:', new Date().toISOString(), 'start:', TOURNAMENT_START.toISOString());
 
-  return NextResponse.json({ ...bonus, isLocked });
+  try {
+    const bonus = await prisma.userBonus.findUnique({
+      where: { userId: (session.user as any).id }
+    });
+    return NextResponse.json({ ...bonus, isLocked });
+  } catch (error) {
+    console.error('[bonus] GET DB error', error);
+    return NextResponse.json({ error: "Error al cargar bonus" }, { status: 500 });
+  }
 }
 
 export async function POST(req: Request) {
@@ -35,14 +39,17 @@ export async function POST(req: Request) {
   }
 
   console.log('[bonus] POST - Guardando bonus. now:', now.toISOString(), 'start:', TOURNAMENT_START.toISOString());
-  const { topScorer, champion, spainResult, mvp } = await req.json();
-  const userId = (session.user as any).id;
-
-  const bonus = await prisma.userBonus.upsert({
-    where: { userId },
-    update: { topScorer, champion, spainResult, mvp },
-    create: { userId, topScorer, champion, spainResult, mvp }
-  });
-
-  return NextResponse.json(bonus);
+  try {
+    const { topScorer, champion, spainResult, mvp } = await req.json();
+    const userId = (session.user as any).id;
+    const bonus = await prisma.userBonus.upsert({
+      where: { userId },
+      update: { topScorer, champion, spainResult, mvp },
+      create: { userId, topScorer, champion, spainResult, mvp }
+    });
+    return NextResponse.json(bonus);
+  } catch (error) {
+    console.error('[bonus] POST DB error', error);
+    return NextResponse.json({ error: "Error al guardar bonus" }, { status: 500 });
+  }
 }

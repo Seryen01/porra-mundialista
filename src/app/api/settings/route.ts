@@ -11,17 +11,16 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let settings = await prisma.appSettings.findUnique({
-    where: { id: "default" }
-  });
-
-  if (!settings) {
-    settings = await prisma.appSettings.create({
-      data: { id: "default" }
-    });
+  try {
+    let settings = await prisma.appSettings.findUnique({ where: { id: "default" } });
+    if (!settings) {
+      settings = await prisma.appSettings.create({ data: { id: "default" } });
+    }
+    return NextResponse.json(settings);
+  } catch (error) {
+    console.error('[settings] GET DB error', error);
+    return NextResponse.json({ error: "Error al cargar configuración" }, { status: 500 });
   }
-
-  return NextResponse.json(settings);
 }
 
 export async function PATCH(req: Request) {

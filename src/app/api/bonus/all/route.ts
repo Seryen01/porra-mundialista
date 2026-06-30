@@ -16,12 +16,18 @@ export async function GET() {
   console.log('[bonus/all] GET - visible:', visible, 'now:', now.toISOString(), 'start:', TOURNAMENT_START.toISOString());
   if (!visible) return NextResponse.json({ visible: false, bonuses: [] });
 
-  const bonuses = await prisma.userBonus.findMany({
-    include: {
-      user: { select: { id: true, name: true, image: true } },
-    },
-    orderBy: { user: { name: "asc" } },
-  });
+  let bonuses: Awaited<ReturnType<typeof prisma.userBonus.findMany<{ include: { user: { select: { id: true; name: true; image: true } } } }>>>;
+  try {
+    bonuses = await prisma.userBonus.findMany({
+      include: {
+        user: { select: { id: true, name: true, image: true } },
+      },
+      orderBy: { user: { name: "asc" } },
+    });
+  } catch (error) {
+    console.error('[bonus/all] DB error', error);
+    return NextResponse.json({ error: "Error al cargar bonus" }, { status: 500 });
+  }
 
   return NextResponse.json({
     visible: true,

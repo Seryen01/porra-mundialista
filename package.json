@@ -1,0 +1,23 @@
+{
+  "name": "atalaya",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "pnpm@10.28.0",
+  "scripts": {
+    "dev": "pnpm --parallel --filter @atalaya/server --filter @atalaya/web dev",
+    "build": "pnpm --filter @atalaya/web build",
+    "start": "pnpm --filter @atalaya/server start",
+    "test": "vitest run",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}
